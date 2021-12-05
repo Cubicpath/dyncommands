@@ -3,7 +3,11 @@
 ###################################################################################################
 # noinspection PyUnresolvedReferences
 def command(*args, **kwargs):
-    self, parser, context = kwargs.pop('self'), kwargs.pop('parser'), kwargs.pop('context')
+    self, parser, context = (
+        kwargs.pop('self'),
+        kwargs.pop('parser'),
+        kwargs.pop('context')
+    )
     source = context.source
     if len(args) == 0:
         source.send_feedback(f"Your available commands are: {', '.join([name for name in {name: cmd for name, cmd in parser.commands.items() if source.has_permission(cmd.permission) and not cmd.disabled}])}", to=source.display_name)

@@ -23,10 +23,16 @@ __all__ = (
 command_builtins = safe_builtins.copy()
 command_builtins.update(limited_builtins)
 command_builtins.update(utility_builtins)
-command_globals = {'__builtins__': command_builtins, '_getattr_': safer_getattr, '_getitem_': default_guarded_getitem,
-                   '_getiter_': default_guarded_getiter, '_iter_unpack_sequence_': guarded_iter_unpack_sequence,
-                   '_unpack_sequence_': guarded_unpack_sequence,
-                   'ImproperUsageError': ImproperUsageError, 'getitem': operator.getitem}
+command_globals = {
+    '__builtins__': command_builtins,
+    '_getattr_': safer_getattr,
+    '_getitem_': default_guarded_getitem,
+    '_getiter_': default_guarded_getiter,
+    '_iter_unpack_sequence_': guarded_iter_unpack_sequence,
+    '_unpack_sequence_': guarded_unpack_sequence,
+    'ImproperUsageError': ImproperUsageError,
+    'getitem': operator.getitem
+}
 
 
 class _CommandPolicy(RestrictingNodeTransformer):
@@ -238,9 +244,13 @@ class CommandParser:
 
         text = get_raw_text(text) if link else text
         lines = text.splitlines(True)
-        name, usage, description = kwargs.pop('name', ''), kwargs.pop('usage', ''), kwargs.pop('description', '')
-        permission:      int = kwargs.pop('permission', -1)
-        children:        list[dict] = kwargs.pop('children', [])
+        name, usage, description, permission, children = (
+            kwargs.pop('name', ''),
+            kwargs.pop('usage', ''),
+            kwargs.pop('description', ''),
+            kwargs.pop('permission', 0),
+            kwargs.pop('children', [])
+        )
         func_name:       str = ''
         func_line:       int = 0
         lines_to_remove: set = set()
@@ -254,7 +264,12 @@ class CommandParser:
                 func_line = i
                 break
 
-            if not (l0.startswith('#') or l0.startswith('\'\'\'') or l0.startswith('\"\"\"') or l0.endswith('\'\'\'') or l0.endswith('\"\"\"')):
+            if not (l0.startswith('#')
+                    or l0.startswith("'''")
+                    or l0.endswith("'''")
+                    or l0.startswith('"""')
+                    or l0.endswith('"""')
+            ):
                 lines_to_remove.add(i)
 
             elif l0.startswith('#name') and not name:
@@ -286,8 +301,16 @@ class CommandParser:
             # Replace function name with generic name 'command'
             lines.insert(func_line, lines.pop(func_line).strip().replace(f'def {func_name}', 'def command', 1) + '\n')
 
-            new_data = {'name': name, 'usage': usage, 'description': description, 'permission': permission,
-                        'function': True, 'children': children, 'overridable': True, 'disabled': False}
+            new_data = {
+                'name': name,
+                'usage': usage,
+                'description': description,
+                'permission': permission,
+                'function': True,
+                'children': children,
+                'overridable': True,
+                'disabled': False
+            }
 
             with open(f'{self.commands_path}/commands.json', 'r', encoding='utf8') as file:
                 data: dict[str, Any] = json.load(file)
