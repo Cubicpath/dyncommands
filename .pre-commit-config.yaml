@@ -1,0 +1,28 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: local
+    hooks:
+      - id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types:
+          - python
+        args:
+          [
+              "-rn", # Only display messages
+              "-sn", # Don't display the score
+              "--rcfile=tox.ini", # Link to your config file
+              "--load-plugins=pylint.extensions.docparams,pylint.extensions.docstyle,pylint.extensions.typing", # Use Pylint extensions for docs and typing
+          ]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.0.1
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: debug-statements
+        language_version: python3

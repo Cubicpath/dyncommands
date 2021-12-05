@@ -1,0 +1,53 @@
+{
+  "commandPrefix": "!",
+  "commands": [
+    {
+      "name": "commands",
+      "usage": "commands [add (link:string) | disable (command:string) | enable (command:string) | reload | remove (command:string)]",
+      "description": "Displays a list of commands.",
+      "permission": 0,
+      "function": true,
+      "children": [
+        {
+          "name": "add",
+          "usage": "add (link:string)",
+          "description": "",
+          "permission": 500
+        },
+        {
+          "name": "disable",
+          "usage": "disable (command:string)",
+          "description": "",
+          "permission": 500
+        },
+        {
+          "name": "enable",
+          "usage": "enable (command:string)",
+          "description": "",
+          "permission": 500
+        },
+        {
+          "name": "reload",
+          "usage": "reload [no args]",
+          "description": "",
+          "permission": 500
+        },
+        {
+          "name": "remove",
+          "usage": "remove (command:string)",
+          "description": "",
+          "permission": 500
+        }
+      ],
+      "overridable": false
+    },
+    {
+      "name": "test",
+      "usage": "test [*args:any]",
+      "description": "Test command.",
+      "permission": 500,
+      "function": true,
+      "disabled": false
+    }
+  ]
+}
