@@ -88,6 +88,7 @@ class TestCommandParser(unittest.TestCase):
             self.assert_prefix(substring_tup[0])
         self.test_source.permission = 1000
         context = CommandContext('test', self.test_source)
+        parser(context)
         parser.parse(context)
         self.assertEqual(self.feedback, f"'{context.working_string.strip()}' is correct usage of the 'test' command.")
 
