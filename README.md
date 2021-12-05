@@ -8,7 +8,7 @@ Dynamic command execution, parsing, and storage.
 [![Codecov](https://img.shields.io/codecov/c/gh/Cubicpath/dyncommands?label=Coverage&logo=codecov&style=for-the-badge)](https://codecov.io/gh/Cubicpath/dyncommands)
 [![MIT License](https://img.shields.io/github/license/Cubicpath/dyncommands?style=for-the-badge)](https://choosealicense.com/licenses/mit)
 
-[![PyPI](https://img.shields.io/pypi/v/dyncommands?label=PyPI&logo=pypi&style=flat-square)](https://test.pypi.org/project/dyncommands/)
+[![PyPI](https://img.shields.io/pypi/v/dyncommands?label=PyPI&logo=pypi&style=flat-square)](https://pypi.org/project/dyncommands/)
 [![Python](https://img.shields.io/pypi/pyversions/dyncommands?label=Python&logo=python&style=flat-square)](https://python.org)
 [![CPython](https://img.shields.io/pypi/implementation/dyncommands?label=Impl&logo=python&style=flat-square)](https://python.org)
 
