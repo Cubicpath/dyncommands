@@ -7,12 +7,15 @@
 # 2) We can load it in setup.cfg
 # 3) We can import it into modules
 
-__version_info__ = (1, 0, 0, 'candidate', 0)
+__version_info__ = (1, 0, 0, 'final', 0)
 """Major, Minor, Micro, Release level, Serial in respective order."""
 
 
 def _stringify(major: int, minor: int, micro: int = 0, releaselevel: str = 'final', serial: int = 0) -> str:
     """Stringifies a version number based on version info given.
+
+    Releaselevel is the status of the given version, NOT the project itself.
+    All versions of an alpha or beta should be a 'final' releaselevel.
 
     Serial is only taken into account if releaselevel is not 'final' or 'release',
     you may also use your own custom releaselevel strings,

@@ -55,7 +55,7 @@ class Command(Node):
                     self._load_function(parser)
 
     def __call__(self, *args, **kwargs) -> Optional[str]:
-        """Syntax sugar for Command._execute."""
+        """Syntax sugar for self._execute."""
         return self._execute(*args, **kwargs)
 
     # pylint: disable=exec-used
@@ -110,7 +110,6 @@ class CommandParser:
 
     def __init__(self, commands_path: str, silent: bool = False, ignore_permission: bool = False) -> None:
         """Create a new Parser and load all command data from the given path.
-
         :param silent: If true, stops all debug printing.
         :param ignore_permission: If true, permission level is not taken into account when executing a command.
         """
@@ -124,6 +123,10 @@ class CommandParser:
         self._silent:           bool = silent
 
         self.reload()
+
+    def __call__(self, context: CommandContext, **kwargs):
+        """Syntax sugar for self.parse."""
+        self.parse(context=context, **kwargs)
 
     @property
     def prefix(self) -> str: return self._command_prefix
@@ -140,24 +143,6 @@ class CommandParser:
     def reload(self) -> None:
         """Load all data from the commands.json file in the commands_path.
         For every command JSON object, a Command object is constructed and assigned with the same name.
-        commands.json follows this format:
-
-        {
-          "commandPrefix": "!",
-          "commands": [
-            {
-              "name": "test",
-              "usage": "test [*args:any]",
-              "description": "Test command.",
-              "permission": 500,
-              "function": true
-            },
-            {
-              "name": "test2",
-              "function": false
-            }
-          ]
-        }
         """
         with open(f'{self.commands_path}/commands.json', 'r', encoding='utf8') as file:
             json_data = json.load(file)

@@ -29,34 +29,6 @@ Example function that takes in 2 arguments and uses them to roll dice and sends 
 
 https://gist.github.com/Cubicpath/8cafed94908b74b370ecd3960fbca3b0
 
-----------
-
-To add commands, you can either manually enter data into a commands.json file then make an associated zzz__ file,
-or use a link and the CommandParser.add_command instance method. If adding a command from a link, the link's contents must be pure text.
-Command meta-data (ie: description, permission level) is stored as comments above the command's python code.
-
-----------
-
-commands.json follows this format:
-
-{
-  "commandPrefix": "!",
-  "commands": [
-    {
-      "name": "test",
-      "usage": "test [*args:any]",
-      "description": "Test command.",
-      "permission": 500,
-      "function": true
-    },
-    {
-      "name": "test2",
-      "function": false
-    }
-  ]
-}
-
-
 """
 
 from ._version import __version__, __version_info__
