@@ -269,30 +269,24 @@ class CommandParser:
                     or l0.endswith("'''")
                     or l0.startswith('"""')
                     or l0.endswith('"""')
-            ):
-                lines_to_remove.add(i)
-
-            elif l0.startswith('#name') and not name:
-                name = get_data(l1, 'name')
-
-            elif l0.startswith('#usage') and not usage:
-                usage = get_data(l1, 'usage')
-
-            elif l0.startswith('#description') and not description:
-                description = get_data(l1, 'description')
-
-            elif l0.startswith('#permission') and permission == -1:
-                try:
-                    permission = int(get_data(l1, 'permission'))
-                except TypeError:
-                    pass
+            ): lines_to_remove.add(i)
 
             elif l0.startswith('#children') and not children:
                 try:
-                    as_json = '{"data": ' + get_data(l1, 'children').translate(str.maketrans('\'', '"')) + "}"
+                    as_json = '{"data": ' + get_data(l1, 'children').translate(str.maketrans('\'', '"')) + '}'
                     children = json.loads(as_json)['data']
                 except (TypeError, ValueError):
                     pass
+
+            else:
+                for var in ('name', 'usage', 'description', 'permission'):
+                    default = vars()[var]
+                    if l0.startswith(f'#{var}' and not default):
+                        try:
+                            # Get string value and cast to type of default value
+                            vars()[var] = type(default)(get_data(l1, var))
+                        except TypeError:
+                            pass
 
         if func_name:
             for i in lines_to_remove:

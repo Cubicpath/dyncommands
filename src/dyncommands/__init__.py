@@ -37,6 +37,7 @@ from .models import *
 from .parser import *
 
 __all__ = (
+    'CaseInsensitiveDict',
     'Command',
     'CommandError',
     'CommandContext',
