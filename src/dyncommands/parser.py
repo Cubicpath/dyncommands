@@ -169,6 +169,8 @@ class CommandParser:
     def parse(self, context: CommandContext, **kwargs) -> None:
         """Parse a CommandContext's working_string for commands and arguments, then execute them.
 
+        It is EXTREMELY recommended wrapping this function in a try-except block.
+
         :param context: Command context for parsing.
         :param kwargs: kwargs you want to  Command being parsed to have access to during execution.
         :raises DisabledError: When command specified in the contextual working string is disabled.
