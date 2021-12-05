@@ -20,7 +20,7 @@ Dyncommands is a python package that allows you to dynamically execute loaded py
 When parsing a string, it separates the command name from arguments, and executes the stored function with those arguments.
 Each time the parser is called, you can pass in your own custom kwargs that the command will have access to.
 
-All command modules are compiled through RestrictedPython before being allowed to run.
+All command modules are compiled through [RestrictedPython](https://github.com/zopefoundation/RestrictedPython) before being allowed to run.
 
 How to use:
 ---------------
@@ -36,26 +36,22 @@ There are two top-level keys:
   - Contains command objects
 
 Available metadata keys for objects inside the __commands__ array are:
-- __name__: _str_ (Required)
-  - Uniquely identifies the command to the CommandParser.
-- __usage__: _str_
-- __description__: _str_
-- __permission__: _int_
-  - The permission level the CommandSource requires to run the command.
-    - Ignored if _ignore_permissions_ is __True__ in the CommandParser instance.
-- __function__: _bool_
-  - Whether there is an associated python module to load.
-- __children__: _array[object]_
-  - Sub-commands; these are handled by the parent's function. (No associated modules for themselves)
-- __overridable__: _bool_
-  - Whether the CommandParser can override any data inside this object (must be manually enabled)
-- __disabled__: _bool_
-  - If __true__ still load command, but raise a DisabledError when attempting to execute.
+
+| key             | type          | description                                                                                       |
+|-----------------|---------------|---------------------------------------------------------------------------------------------------|
+| name (Required) | string        | Uniquely identifies the command to the CommandParser.                                             |
+| usage           | string        | Usage information (How to use args)                                                               |                                                      |
+| description     | string        | Description of command                                                                            |
+| permission      | integer       | The permission level the CommandSource requires to run the command.                               |
+| function        | boolean       | Whether there is an associated python module to load.                                             |
+| children        | array[object] | Sub-commands; these are handled by the parent's function. (No associated modules for themselves). |
+| overridable     | boolean       | Whether the CommandParser can override any data inside this object (must be manually enabled).    |
+| disabled        | boolean       | If __true__ still load command, but raise a DisabledError when attempting to execute.             |
 
 __NOTE:__ Commands modules are not loaded unless they are listed in commands.json with the "function" key set to true.
 
 #### Example commands.json contents:
-```
+```json
 {
   "commandPrefix": "!",
   "commands": [
@@ -91,7 +87,7 @@ and stored in memory for execution. The function has access to any args that wer
 Since commands cannot import heir own modules, some are included in globals (math, random, and string).
 
 #### Example command module:
-```
+```python
 def command(*args, **kwargs):
     self, context = kwargs.pop('self'), kwargs.pop('context')
     source = context.source
@@ -109,16 +105,14 @@ def command(*args, **kwargs):
 At any time, you can call CommandParser.reload() to reload all command modules and metadata from disk storage.
 
 #### Example file structure:
-```
-../
-│
-├───[commands_path]/
-│       ├─── commands.json
-│       ├─── zzz__[command1].py
-│       ├─── zzz__[command2].py
-│       └─── zzz__[command3].py
-│
-```
+    ../
+    │
+    ├───[commands_path]/
+    │       ├─── commands.json
+    │       ├─── zzz__[command1].py
+    │       ├─── zzz__[command2].py
+    │       └─── zzz__[command3].py
+    │
 
 ### Adding/Removing Commands:
 
@@ -132,7 +126,7 @@ __NOTE:__ When adding a command, metadata for 'name' __must__ to be filled. This
 
 
 #### Example of metadata as comments:
-```
+```python
 # Name: points
 # Usage: points [get (username:string)| set (username:string amount:integer)]
 # Description: Get your current points
