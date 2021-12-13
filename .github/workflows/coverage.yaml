@@ -1,7 +1,11 @@
 name: Codecov
 
 on:
-  - push
+  push:
+    branches:
+      - master
+    paths:
+      - src/**
 
 jobs:
   coverage:
