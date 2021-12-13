@@ -2,6 +2,10 @@
 #                              MIT Licence (C) 2021 Cubicpath@Github                              #
 ###################################################################################################
 # noinspection PyUnresolvedReferences
-def command(*args, **kwargs):
+# Name: test
+# Usage: test [*args:Any]
+# Description: Test command.
+# Permission: 500
+def command(*_, **kwargs):
     context = kwargs.pop('context')
     return f"'{context.working_string.strip()}' is correct usage of the 'test' command."

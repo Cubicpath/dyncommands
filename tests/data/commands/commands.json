@@ -43,10 +43,12 @@
     },
     {
       "name": "test",
-      "usage": "test [*args:any]",
+      "usage": "test [*args:Any]",
       "description": "Test command.",
       "permission": 500,
       "function": true,
+      "children": [],
+      "overridable": true,
       "disabled": false
     }
   ]
