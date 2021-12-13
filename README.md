@@ -15,7 +15,7 @@ Dynamic command execution, parsing, and storage.
 ------------------------------
 About:
 ---------------
-Dyncommands is a python package that allows you to dynamically execute loaded python modules (commands) through parsing strings.
+Dyncommands allows you to dynamically import and run python functions. Useful for adding commands to IRC chatbots or CLI applications without a restart.
 
 When parsing a string, it separates the command name from arguments, and executes the stored function with those arguments.
 Each time the parser is called, you can pass in your own custom kwargs that the command will have access to.
