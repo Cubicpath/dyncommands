@@ -2,7 +2,6 @@
 #                              MIT Licence (C) 2021 Cubicpath@Github                              #
 ###################################################################################################
 """Tests for the parser.py and exceptions.py modules."""
-
 # Boilerplate to allow running script directly.
 if __name__ == "__main__" and __package__ is None: import sys, os; sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))); __package__ = 'tests'; del sys, os
 
@@ -82,7 +81,28 @@ class TestCommandParser(unittest.TestCase):
     def tearDown(self) -> None:
         parser.prefix = orig_prefix
 
-    def test_commandParser(self):
+    def test_set_disabled(self):
+        self.assertFalse(parser.set_disabled('commands', True))
+        self.assertTrue(parser.set_disabled('test', True))
+        self.assertFalse(parser.commands['commands'].disabled)
+        self.assertTrue(parser.commands['test'].disabled)
+        parser.set_disabled('test', False)
+
+    def test_command_updating(self):
+        broken_command_link = 'https://gist.github.com/Cubicpath/8fc611ca67bf2d17e03b4766a816596a'
+        with open(parser.commands_path + '/zzz__test.py', encoding='utf8') as file:
+            test_command = file.read()
+        self.assertEqual(parser.add_command(text=test_command), 'test')
+        self.assertEqual(parser.add_command(text=broken_command_link, link=True), 'broken')
+        parser.reload()
+        self.assertEqual(parser.commands['test'].name, 'test')
+        self.assertEqual(parser.commands['test'].usage, 'test [*args:Any]')
+        self.assertEqual(parser.commands['test'].description, 'Test command.')
+        self.assertEqual(parser.commands['test'].permission, 500)
+        self.assertEqual(parser.commands['test'].children, {})
+        self.assertIsNone(parser.commands.get('broken'))
+
+    def test_parse(self):
         """Command parsing"""
         for substring_tup in [(char,) for char in string.printable.rstrip(string.whitespace)] + [('!#',)] + [('(5352)',)]:
             self.assert_prefix(substring_tup[0])

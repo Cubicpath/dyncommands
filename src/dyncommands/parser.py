@@ -2,14 +2,22 @@
 #                              MIT Licence (C) 2021 Cubicpath@Github                              #
 ###################################################################################################
 """Parser for Dynamic Commands."""
-
+import json
 import operator
 import os
-import json
-from typing import Any, Optional
-from RestrictedPython import RestrictingNodeTransformer, safe_builtins, limited_builtins, utility_builtins, compile_restricted as safe_compile
-from RestrictedPython.Eval import default_guarded_getiter, default_guarded_getitem
-from RestrictedPython.Guards import guarded_unpack_sequence, guarded_iter_unpack_sequence, safer_getattr
+from typing import Any
+from typing import Optional
+
+from RestrictedPython import compile_restricted as safe_compile
+from RestrictedPython import limited_builtins
+from RestrictedPython import RestrictingNodeTransformer
+from RestrictedPython import safe_builtins
+from RestrictedPython import utility_builtins
+from RestrictedPython.Eval import default_guarded_getitem
+from RestrictedPython.Eval import default_guarded_getiter
+from RestrictedPython.Guards import guarded_iter_unpack_sequence
+from RestrictedPython.Guards import guarded_unpack_sequence
+from RestrictedPython.Guards import safer_getattr
 
 from .exceptions import *
 from .models import *
@@ -54,7 +62,7 @@ class Command(Node):
                 self.usage = command.get('usage', self.usage)
                 self.description = command.get('description', self.description)
                 self.permission = command.get('permission', self.permission)
-                self.children = {props['name']: Node(parent=self, **props) for props in command.get('children', [])}
+                self.children = CaseInsensitiveDict({props['name']: Node(parent=self, **props) for props in command.get('children', [])})
                 self.disabled = command.get('disabled', self.disabled)
 
                 if command.get('function', False) is True:  # True, False, and None
@@ -70,7 +78,7 @@ class Command(Node):
         namespace = {}
         file_path: str = f'{parser.commands_path}/zzz__{self.name}.py'
         try:
-            with open(file_path, 'r', encoding='utf8') as file:
+            with open(file_path, encoding='utf8') as file:
                 # Attempt to compile code and run function definition
                 plaintext_code = file.read()
                 byte_code = safe_compile(plaintext_code, file_path, 'exec', policy=_CommandPolicy)
@@ -140,7 +148,7 @@ class CommandParser:
     @prefix.setter
     def prefix(self, value) -> None:
         self._command_prefix = value
-        with open(f'{self.commands_path}/commands.json', 'r', encoding='utf8') as file:
+        with open(f'{self.commands_path}/commands.json', encoding='utf8') as file:
             new_json: dict[str, Any] = json.load(file)
             new_json['commandPrefix'] = self._command_prefix
         with open(f'{self.commands_path}/commands.json', 'w', encoding='utf8') as file:
@@ -150,12 +158,19 @@ class CommandParser:
         """Load all data from the commands.json file in the commands_path.
         For every command JSON object, a Command object is constructed and assigned with the same name.
         """
-        with open(f'{self.commands_path}/commands.json', 'r', encoding='utf8') as file:
+        with open(f'{self.commands_path}/commands.json', encoding='utf8') as file:
             json_data = json.load(file)
 
         self._command_prefix = json_data['commandPrefix']
         self.command_data = json_data['commands']
         self.commands = CaseInsensitiveDict({command['name']: Command(command['name'], self) for command in self.command_data})
+
+        # Load json data a second time to check for any remnant commands in memory that weren't removed during failed compilation
+        with open(f'{self.commands_path}/commands.json', encoding='utf8') as file:
+            updated_json_data = json.load(file)
+        if json_data != updated_json_data:
+            self.command_data = updated_json_data['commands']
+            self.commands = CaseInsensitiveDict({command['name']: Command(command['name'], self) for command in self.command_data})
 
     def parse(self, context: CommandContext, **kwargs) -> None:
         """Parse a CommandContext's working_string for commands and arguments, then execute them.
@@ -177,6 +192,7 @@ class CommandParser:
             if self.commands.get(name) is not None:
                 kwargs.update({'parser': self, 'context': context})
                 try:
+                    # Call command function with args and kwargs
                     return_val = self.commands[name](*args, **kwargs)
                     if return_val is not None:
                         # Return Value, if any
@@ -205,7 +221,7 @@ class CommandParser:
         :param value: Whether disabled or not.
         :return: If disabled state successfully changed.
         """
-        with open(f'{self.commands_path}/commands.json', 'r', encoding='utf8') as file:
+        with open(f'{self.commands_path}/commands.json', encoding='utf8') as file:
             data: dict[str, Any] = json.load(file)
             commands: dict[str, dict] = {command['name']: command for command in data.get('commands')}
 
@@ -244,87 +260,134 @@ class CommandParser:
 
         text = get_raw_text(text) if link else text
         lines = text.splitlines(True)
-        name, usage, description, permission, children = (
+        command_data:    list[Any] = [
             kwargs.pop('name', ''),
             kwargs.pop('usage', ''),
             kwargs.pop('description', ''),
             kwargs.pop('permission', 0),
             kwargs.pop('children', [])
-        )
+        ]
         func_name:       str = ''
         func_line:       int = 0
         lines_to_remove: set = set()
+        lines_to_sub_at: set[tuple[int, int]] = set()
+        in_docstring:    bool = False
+        doc_markers:     tuple[str, str] = ('"""', "'''")
+
         for i, line in enumerate(lines):
-            l0 = line.replace(' ', '').replace('\t', '').lower()
-            l1 = line.strip().removeprefix('#')
+            simple = line.replace(' ', '').replace('\t', '').strip().lower()
+            uncommented = line.strip().removeprefix('#')
 
-            if l0.startswith('def'):
-                func_name = line.strip().removeprefix('def ').split('(')[0].replace('_', '-')
-                name = func_name if not name else name
-                func_line = i
-                break
+            # If ''' or """ in line
+            if True in (marker in line for marker in doc_markers):
+                do_continue: bool = False
+                for marker in doc_markers:
 
-            if not (l0.startswith('#')
-                    or l0.startswith("'''")
-                    or l0.endswith("'''")
-                    or l0.startswith('"""')
-                    or l0.endswith('"""')
-            ): lines_to_remove.add(i)
-
-            elif l0.startswith('#children') and not children:
-                try:
-                    as_json = '{"data": ' + get_data(l1, 'children').translate(str.maketrans('\'', '"')) + '}'
-                    children = json.loads(as_json)['data']
-                except (TypeError, ValueError):
-                    pass
-
-            else:
-                for var in ('name', 'usage', 'description', 'permission'):
-                    default = vars()[var]
-                    if l0.startswith(f'#{var}' and not default):
+                    # When starting a docstring
+                    if simple.startswith(marker) and not in_docstring:
                         try:
-                            # Get string value and cast to type of default value
-                            vars()[var] = type(default)(get_data(l1, var))
-                        except TypeError:
+                            second_doc: int = simple.index(marker, simple.index(marker) + 1)
+                        except ValueError:
+                            # Multi-line docstring
+                            in_docstring = True
+                        else:
+                            # Single-line docstring
+                            lines_to_sub_at.add((i, second_doc + 3))
+                        finally:
+                            do_continue = True
+
+                    # When ending a multi-line docstring
+                    elif marker in simple and in_docstring:
+                        in_docstring = False
+                        lines_to_sub_at.add((i, line.index('"""') + 3))
+                        do_continue = True
+
+                if do_continue:
+                    continue
+
+            # If line is not currently in a multi-line string
+            if not in_docstring:
+
+                # If function hasn't yet been defined
+                if not func_name:
+
+                    if line.startswith('def'):
+                        func_name = line.strip().removeprefix('def ').split('(')[0].replace('_', '-')
+                        command_data[0] = func_name if not command_data[0] else command_data[0]
+                        func_line = i
+                        continue
+
+                    # Remove all non-comment lines above function definition
+                    if not simple.startswith('#'):
+                        lines_to_remove.add(i)
+                        continue
+
+                    if simple.startswith('#children') and not command_data[4]:
+                        try:
+                            as_json = '{"data": ' + get_data(uncommented, 'children').translate(str.maketrans("'", '"')) + '}'
+                            command_data[4] = json.loads(as_json)['data']
+                        except (TypeError, ValueError):
                             pass
+                        continue
+
+                    for x, var in enumerate(('name', 'usage', 'description', 'permission')):
+                        default = command_data[x]
+                        if simple.startswith(f'#{var}') and not default:
+                            try:
+                                # Get string value and cast to type of default value
+                                command_data[x] = type(default)(get_data(uncommented, var))
+                            except TypeError:
+                                pass
+                            break
+
+                else:
+                    # Remove non-comment lines outside of function's scope
+                    if simple != '' and not (line.startswith(' ') or line.startswith('\t')):
+                        if not simple.startswith('#'):
+                            lines_to_remove.add(i)
 
         if func_name:
             for i in lines_to_remove:
+                # Mark lines for removal with a NULL char
                 lines.insert(i, lines.pop(i) + '\0')
+
+            for tup in lines_to_sub_at:
+                # Substring all marked lines from start to specified index
+                line_num, char_num = tup
+                lines.insert(line_num, lines.pop(line_num)[:char_num] + '\n')
+
             lines = [line for line in lines if not line.endswith('\0')]
             # Replace function name with generic name 'command'
             lines.insert(func_line, lines.pop(func_line).strip().replace(f'def {func_name}', 'def command', 1) + '\n')
 
             new_data = {
-                'name': name,
-                'usage': usage,
-                'description': description,
-                'permission': permission,
+                'name': command_data[0],
+                'usage': command_data[1],
+                'description': command_data[2],
+                'permission': command_data[3],
                 'function': True,
-                'children': children,
+                'children': command_data[4],
                 'overridable': True,
                 'disabled': False
             }
 
-            with open(f'{self.commands_path}/commands.json', 'r', encoding='utf8') as file:
+            with open(f'{self.commands_path}/commands.json', encoding='utf8') as file:
                 data: dict[str, Any] = json.load(file)
 
             commands = {command['name']: command for command in data.get('commands')}
 
-            if commands.get(name, {}).get('overridable') is not False:
-                commands.update({name: new_data})
+            if commands.get(new_data['name'], {}).get('overridable') is not False:
+                commands.update({new_data['name']: new_data})
             else:
                 return ''
 
             data.update({'commands': list(commands.values())})
 
-            with open(f'{self.commands_path}/commands.json', 'w', encoding='utf8') as file:
-                json.dump(data, file, indent=2)
+            with open(f'{self.commands_path}/commands.json', 'w', encoding='utf8') as commands_json, open(f'{self.commands_path}/zzz__{new_data["name"]}.py', 'w', encoding='utf8') as command_module:
+                json.dump(data, commands_json, indent=2)
+                command_module.writelines(lines)
 
-            with open(f'{self.commands_path}/zzz__{name}.py', 'w', encoding='utf8') as file:
-                file.writelines(lines)
-                file.write('\n')
-            return name
+            return new_data['name']
 
         return ''
 
@@ -335,7 +398,7 @@ class CommandParser:
         :return: {name} if successful, else empty string.
         """
         removed = False
-        with open(f'{self.commands_path}/commands.json', 'r', encoding='utf8') as file:
+        with open(f'{self.commands_path}/commands.json', encoding='utf8') as file:
             data: dict[str, Any] = json.load(file)
 
         commands = {command['name']: command for command in data.get('commands')}
