@@ -40,7 +40,7 @@ Available metadata keys for objects inside the __commands__ array are:
 | key             | type          | description                                                                                       |
 |-----------------|---------------|---------------------------------------------------------------------------------------------------|
 | name (Required) | string        | Uniquely identifies the command to the CommandParser.                                             |
-| usage           | string        | Usage information (How to use args)                                                               |                                                      |
+| usage           | string        | Usage information (How to use args)                                                               |
 | description     | string        | Description of command                                                                            |
 | permission      | integer       | The permission level the CommandSource requires to run the command.                               |
 | function        | boolean       | Whether there is an associated python module to load.                                             |
