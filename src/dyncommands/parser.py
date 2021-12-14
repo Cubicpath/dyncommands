@@ -299,13 +299,13 @@ class CommandParser:
                     # When ending a multi-line docstring
                     elif marker in simple and in_docstring:
                         in_docstring = False
-                        lines_to_sub_at.add((i, line.index('"""') + 3))
+                        lines_to_sub_at.add((i, line.index(marker) + 3))
                         do_continue = True
 
                 if do_continue:
                     continue
 
-            # If line is not currently in a multi-line string
+            # If line is not currently in a multi-line docstring
             if not in_docstring:
 
                 # If function hasn't yet been defined
