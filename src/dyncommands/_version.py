@@ -7,7 +7,7 @@
 # 2) We can load it in setup.cfg
 # 3) We can import it into modules
 
-__version_info__ = (1, 1, 0, 'final', 0)
+__version_info__ = (1, 1, 1, 'candidate', 0)
 """Major, Minor, Micro, Release level, Serial in respective order."""
 
 
@@ -20,6 +20,9 @@ def _stringify(major: int, minor: int, micro: int = 0, releaselevel: str = 'fina
     Serial is only taken into account if releaselevel is not 'final' or 'release',
     you may also use your own custom releaselevel strings,
     though they will be shortened if they are longer than 3 characters.
+
+    For developmental releases, post releases, and local release specifications, see
+    https://www.python.org/dev/peps/pep-0440/
 
     Ex: (2021, 9) -> 2021.9
     Ex: (0, 3, 2, 'beta') -> 0.3.2b
@@ -50,7 +53,7 @@ def _stringify(major: int, minor: int, micro: int = 0, releaselevel: str = 'fina
     :keyword dev_post_sep: Developmental Post-release seperator
     :keyword dev_post_ver_sep: Developmental Post-release version seperator
     :return: String representation of version number.
-    :raises TypeError: Version separators are not in the allowed chars.
+    :raises TypeError: Version numbers are not integers.
     :raises ValueError: Version separators are not in the allowed chars.
     """
     local, local_ver, local_ver_sep, pre_sep, pre_ver_sep, post, post_spelling, post_implicit, post_sep, post_ver_sep, dev, dev_sep, dev_post, dev_post_sep, dev_post_ver_sep = (
@@ -72,14 +75,18 @@ def _stringify(major: int, minor: int, micro: int = 0, releaselevel: str = 'fina
     )
 
     releaselevel = releaselevel.strip()
+    separators:     tuple[str, ...] = ('', '.', '-', '_')
+    post_spellings: tuple[str, ...] = ('post', 'rev', 'r')
+    release_levels: tuple[str, ...] = ('a', 'b', 'c', 'rc', 'pre', 'alpha', 'beta', 'candidate', 'preview', 'final', 'release')
+
     for attr in ('major', 'minor', 'micro', 'local_ver', 'post', 'dev', 'dev_post'):
         if vars()[attr] is not None and not isinstance(vars()[attr], int):
-            raise TypeError(f'Argument "{attr}" should be of type "int"')
-    if False in (v in ('', '.', '-', '_') for v in (pre_sep, pre_ver_sep, post_sep, post_ver_sep, dev_sep, dev_post_sep, dev_post_ver_sep)) or local_ver_sep not in ('.', '-', '_'):
-        raise ValueError('A separator given is not in allowed separators ("-", "_", ".", "")')
-    if post_spelling not in ('post', 'rev', 'r'):
+            raise TypeError(f'Argument "{attr}" should be of type {int}')
+    if False in (v in separators for v in (pre_sep, pre_ver_sep, post_sep, post_ver_sep, dev_sep, dev_post_sep, dev_post_ver_sep)) or local_ver_sep not in separators[1:]:
+        raise ValueError(f'A separator given is not in allowed separators {separators}')
+    if post_spelling not in post_spellings:
         raise ValueError(f'Post-release spelling not allowed as "{post_spelling}"')
-    if releaselevel not in ('a', 'b', 'c', 'rc', 'pre', 'alpha', 'beta', 'candidate', 'preview', 'final', 'release'):
+    if releaselevel not in release_levels:
         raise ValueError(f'Release level "{releaselevel}" is not in known release levels')
 
     v_number: str = f'{major}.{minor}'

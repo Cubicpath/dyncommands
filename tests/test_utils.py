@@ -99,6 +99,7 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual(version_stringify(3, 10, 0, 'candidate', 0), '3.10rc')
         self.assertEqual(version_stringify(3, 9, 1, 'alpha', 3), '3.9.1a3')
         self.assertEqual(version_stringify(3, 9, 1, dev=2), '3.9.1.dev2')
+        self.assertEqual(version_stringify(20, 45, 0, dev=2, dev_sep='_', dev_post=1, post_spelling='r'), '20.45_dev2.r1')
         self.assertEqual(version_stringify(3, 9, 2, 'preview', 3, post=0, post_implicit=True, dev=5), '3.9.2pre3-0.dev5')
         self.assertEqual(version_stringify(1, 0, local='ubuntu', local_ver=2, local_ver_sep='-'), '1.0+ubuntu-2')
         self.assertRaises(TypeError, version_stringify, self.test_string)
@@ -108,7 +109,7 @@ class TestFunctions(unittest.TestCase):
             self.assertRaises(ValueError, version_stringify, 1, 0, **kwargs)
             kwargs.clear()
         for kwarg in ('major', 'minor', 'micro', 'local_ver, post, dev, dev_post'):
-            kwargs.update({kwarg: ''})
+            kwargs.update({kwarg: 'string'})
             self.assertRaises(TypeError, version_stringify, 1, 0, **kwargs)
 
 
