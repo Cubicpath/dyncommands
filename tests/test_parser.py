@@ -2,17 +2,18 @@
 #                              MIT Licence (C) 2021 Cubicpath@Github                              #
 ###################################################################################################
 """Tests for the parser.py and exceptions.py modules."""
-# Boilerplate to allow running script directly.
-if __name__ == "__main__" and __package__ is None: import sys, os; sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))); __package__ = 'tests'; del sys, os
-
-import os
 import random
 import string
+import sys
 import unittest
+from pathlib import Path
 
 from dyncommands import *
 
-parser = CommandParser(commands_path=f'{os.path.dirname(__file__)}/data/commands', silent=True)
+# Boilerplate to allow running script directly.
+if __name__ == '__main__' and __package__ is None: sys.path.insert(1, str(Path(__file__).resolve().parent.parent)); __package__ = 'tests'
+
+parser = CommandParser(commands_path=str(Path(__file__).parent / 'data/commands'), silent=True)
 orig_prefix = parser.prefix
 
 
@@ -90,7 +91,7 @@ class TestCommandParser(unittest.TestCase):
 
     def test_command_updating(self):
         broken_command_link = 'https://gist.github.com/Cubicpath/8fc611ca67bf2d17e03b4766a816596a'
-        with open(parser.commands_path + '/zzz__test.py', encoding='utf8') as file:
+        with (parser.commands_path / 'zzz__test.py').open(mode='r', encoding='utf8') as file:
             test_command = file.read()
         self.assertEqual(parser.add_command(text=test_command), 'test')
         self.assertEqual(parser.add_command(text=broken_command_link, link=True), 'broken')

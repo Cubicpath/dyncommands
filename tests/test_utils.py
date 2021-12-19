@@ -2,14 +2,15 @@
 #                              MIT Licence (C) 2021 Cubicpath@Github                              #
 ###################################################################################################
 """Tests for the utils.py module."""
-# Boilerplate to allow running script directly.
-if __name__ == "__main__" and __package__ is None: import sys, os; sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))); __package__ = 'tests'; del sys, os
-
-import os
+import sys
 import unittest
+from pathlib import Path
 
-from dyncommands.utils import *
 from dyncommands._version import _stringify as version_stringify
+from dyncommands.utils import *
+
+# Boilerplate to allow running script directly.
+if __name__ == '__main__' and __package__ is None: sys.path.insert(1, str(Path(__file__).resolve().parent.parent)); __package__ = 'tests'
 
 
 class TestPrivateProxy(unittest.TestCase):

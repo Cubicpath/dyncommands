@@ -4,9 +4,10 @@
 """Parser for Dynamic Commands."""
 import json
 import operator
-import os
+from pathlib import Path
 from typing import Any
 from typing import Optional
+from typing import Union
 
 from RestrictedPython import compile_restricted as safe_compile
 from RestrictedPython import limited_builtins
@@ -75,20 +76,21 @@ class Command(Node):
     # pylint: disable=exec-used
     def _load_function(self, parser: 'CommandParser'):
         """Loads in python code from storage for future execution."""
-        namespace = {}
-        file_path: str = f'{parser.commands_path}/zzz__{self.name}.py'
+        module_path: Path = parser.commands_path / f'zzz__{self.name}.py'
+        namespace:   dict[str, Any] = {}
+
         try:
-            with open(file_path, encoding='utf8') as file:
+            with module_path.open(mode='r', encoding='utf8') as file:
                 # Attempt to compile code and run function definition
                 plaintext_code = file.read()
-                byte_code = safe_compile(plaintext_code, file_path, 'exec', policy=_CommandPolicy)
+                byte_code = safe_compile(plaintext_code, str(module_path), 'exec', policy=_CommandPolicy)
                 exec(byte_code, command_globals, namespace)
         except (FileNotFoundError, SyntaxError, NotImplementedError) as e:
             parser.print(str(e))
-            parser.print(f"Discarding broken command '{self.name}' from {file_path}.")
+            parser.print(f"Discarding broken command '{self.name}' from {module_path}.")
             parser.remove_command(self.name)
         else:
-            parser.print(f"Loading file {file_path} from disk into '{self.name}'.")
+            parser.print(f"Loading file {module_path} from disk into '{self.name}'.")
             self._function = namespace.get('command', DUMMY_FUNC)
 
     # noinspection PyProtectedMember
@@ -122,14 +124,14 @@ class Command(Node):
 class CommandParser:
     """Keeps track of all commands and command metadata. Allows for dynamic execution of commands through string parsing."""
 
-    def __init__(self, commands_path: str, silent: bool = False, ignore_permission: bool = False) -> None:
+    def __init__(self, commands_path: Union[str, Path], silent: bool = False, ignore_permission: bool = False) -> None:
         """Create a new Parser and load all command data from the given path.
         :param silent: If true, stops all debug printing.
         :param ignore_permission: If true, permission level is not taken into account when executing a command.
         """
         self.commands:          CaseInsensitiveDict[Command] = CaseInsensitiveDict()
         self.command_data:      list[dict[str, Any]] = []
-        self.commands_path:     str = commands_path
+        self.commands_path:     Path = Path(commands_path)
         self.delimiting_str:    str = ' '
         self._command_prefix:   str = '/'
         self._current_command:  Optional[Command] = None
@@ -147,18 +149,21 @@ class CommandParser:
 
     @prefix.setter
     def prefix(self, value) -> None:
+        json_path: Path = self.commands_path / 'commands.json'
         self._command_prefix = value
-        with open(f'{self.commands_path}/commands.json', encoding='utf8') as file:
+        with json_path.open(mode='r', encoding='utf8') as file:
             new_json: dict[str, Any] = json.load(file)
             new_json['commandPrefix'] = self._command_prefix
-        with open(f'{self.commands_path}/commands.json', 'w', encoding='utf8') as file:
+        with json_path.open(mode='w', encoding='utf8') as file:
             json.dump(new_json, file, indent=2)
 
     def reload(self) -> None:
         """Load all data from the commands.json file in the commands_path.
         For every command JSON object, a Command object is constructed and assigned with the same name.
         """
-        with open(f'{self.commands_path}/commands.json', encoding='utf8') as file:
+        json_path: Path = self.commands_path / 'commands.json'
+
+        with json_path.open(mode='r', encoding='utf8') as file:
             json_data = json.load(file)
 
         self._command_prefix = json_data['commandPrefix']
@@ -166,7 +171,7 @@ class CommandParser:
         self.commands = CaseInsensitiveDict({command['name']: Command(command['name'], self) for command in self.command_data})
 
         # Load json data a second time to check for any remnant commands in memory that weren't removed during failed compilation
-        with open(f'{self.commands_path}/commands.json', encoding='utf8') as file:
+        with json_path.open(mode='r', encoding='utf8') as file:
             updated_json_data = json.load(file)
         if json_data != updated_json_data:
             self.command_data = updated_json_data['commands']
@@ -221,7 +226,9 @@ class CommandParser:
         :param value: Whether disabled or not.
         :return: If disabled state successfully changed.
         """
-        with open(f'{self.commands_path}/commands.json', encoding='utf8') as file:
+        json_path: Path = self.commands_path / 'commands.json'
+
+        with json_path.open(mode='r', encoding='utf8') as file:
             data: dict[str, Any] = json.load(file)
             commands: dict[str, dict] = {command['name']: command for command in data.get('commands')}
 
@@ -233,7 +240,7 @@ class CommandParser:
 
             data.update({'commands': list(commands.values())})
 
-        with open(f'{self.commands_path}/commands.json', 'w', encoding='utf8') as file:
+        with json_path.open(mode='w', encoding='utf8') as file:
             json.dump(data, file, indent=2)
 
         return True
@@ -371,8 +378,11 @@ class CommandParser:
                 'disabled': False
             }
 
-            with open(f'{self.commands_path}/commands.json', encoding='utf8') as file:
-                data: dict[str, Any] = json.load(file)
+            json_path:   Path = self.commands_path / 'commands.json'
+            module_path: Path = self.commands_path / f'zzz__{new_data["name"]}.py'
+
+            with json_path.open(mode='r', encoding='utf8') as json_file:
+                data: dict[str, Any] = json.load(json_file)
 
             commands = {command['name']: command for command in data.get('commands')}
 
@@ -383,9 +393,9 @@ class CommandParser:
 
             data.update({'commands': list(commands.values())})
 
-            with open(f'{self.commands_path}/commands.json', 'w', encoding='utf8') as commands_json, open(f'{self.commands_path}/zzz__{new_data["name"]}.py', 'w', encoding='utf8') as command_module:
-                json.dump(data, commands_json, indent=2)
-                command_module.writelines(lines)
+            with json_path.open(mode='w', encoding='utf8') as json_file, module_path.open(mode='w', encoding='utf8') as module_file:
+                json.dump(data, json_file, indent=2)
+                module_file.writelines(lines)
 
             return new_data['name']
 
@@ -397,8 +407,11 @@ class CommandParser:
         :param name: Name of command to remove.
         :return: {name} if successful, else empty string.
         """
-        removed = False
-        with open(f'{self.commands_path}/commands.json', encoding='utf8') as file:
+        json_path:   Path = Path(f'{self.commands_path}/commands.json')
+        module_path: Path = Path(f'{self.commands_path}/zzz__{name}.py')
+        removed:     bool = False
+
+        with json_path.open(mode='r', encoding='utf8') as file:
             data: dict[str, Any] = json.load(file)
 
         commands = {command['name']: command for command in data.get('commands')}
@@ -411,11 +424,11 @@ class CommandParser:
 
         data.update({'commands': list(commands.values())})
 
-        with open(f'{self.commands_path}/commands.json', 'w', encoding='utf8') as file:
+        with json_path.open(mode='w', encoding='utf8') as file:
             json.dump(data, file, indent=2)
 
         try:
-            os.remove(f'{self.commands_path}/zzz__{name}.py')
+            module_path.unlink()
         except FileNotFoundError:
             pass
         else:
