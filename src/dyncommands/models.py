@@ -2,9 +2,10 @@
 #                              MIT Licence (C) 2021 Cubicpath@Github                              #
 ###################################################################################################
 """Models for Dynamic Commands."""
-
-from typing import Optional, Union, Any
 from collections.abc import Callable
+from typing import Any
+from typing import Optional
+from typing import Union
 
 from requests.structures import CaseInsensitiveDict
 

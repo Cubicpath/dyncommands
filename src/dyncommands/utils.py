@@ -5,14 +5,14 @@
 from collections.abc import Callable
 from typing import SupportsIndex
 
+import requests
+
 __all__ = (
     'PrivateProxy',
     'get_raw_text',
     'ireplace',
     'DUMMY_FUNC'
 )
-
-import requests
 
 DUMMY_FUNC = lambda *args, **kwargs: None
 
