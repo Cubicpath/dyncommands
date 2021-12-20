@@ -13,7 +13,8 @@
     "commands": {
       "type": "array",
       "description": "Array containing command objects.",
-      "items": { "$ref":  "#/definitions/command"},
+      "contains": { "$ref":  "#/definitions/command" },
+      "items": { "$ref":  "#/definitions/command" },
       "uniqueItems": true,
       "examples": [
         [
@@ -25,11 +26,11 @@
             "function": true
           },
           {
-            "name": "test2"
+            "name": "test2",
             "usage": "test2 [child | child2 [*args:any]]",
             "children": [
               {
-                "name": "child"
+                "name": "child",
                 "usage": "test2 child"
               },
               {
@@ -77,8 +78,9 @@
         "children": {
           "type": "array",
           "description": "Sub-commands; these are handled by the parent's function. (No associated modules for themselves).",
-          "items": { "$ref":  "#/definitions/command"},
-          "uniqueItems": true,
+          "contains": { "$ref":  "#/definitions/command" },
+          "items": { "$ref":  "#/definitions/command" },
+          "uniqueItems": true
         },
         "overridable": {
           "type": "boolean",
