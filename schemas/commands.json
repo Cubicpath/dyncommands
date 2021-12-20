@@ -26,6 +26,19 @@
           },
           {
             "name": "test2"
+            "usage": "test2 [child | child2 [*args:any]]",
+            "children": [
+              {
+                "name": "child"
+                "usage": "test2 child"
+              },
+              {
+                "name": "child2",
+                "usage": "test child2 [*args:any]",
+                "description": "Sub-command.",
+                "permission": 1000
+              }
+            ]
           }
         ]
       ]
@@ -66,19 +79,6 @@
           "description": "Sub-commands; these are handled by the parent's function. (No associated modules for themselves).",
           "items": { "$ref":  "#/definitions/command"},
           "uniqueItems": true,
-          "examples": [
-            [
-              {
-                "name": "child"
-              },
-              {
-                "name": "child2",
-                "usage": "test child2 [*args:any]",
-                "description": "Sub-command.",
-                "permission": 1000
-              }
-            ]
-          ]
         },
         "overridable": {
           "type": "boolean",
