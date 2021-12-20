@@ -1,0 +1,105 @@
+{
+  "$id": "https://raw.githubusercontent.com/Cubicpath/dyncommands/master/schemas/commands.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Command metadata",
+  "description": "https://github.com/Cubicpath/dyncommands/blob/master/README.md#command-metadata",
+  "required": ["commandPrefix", "commands"],
+  "type": "object",
+  "properties": {
+    "commandPrefix": {
+      "type": "string",
+      "description": "Strings must start with this prefix, otherwise it is ignored. Empty string accepts all."
+    },
+    "commands": {
+      "type": "array",
+      "description": "Array containing command objects.",
+      "items": { "$ref":  "#/definitions/command"},
+      "uniqueItems": true,
+      "examples": [
+        [
+          {
+            "name": "test",
+            "usage": "test [*args:any]",
+            "description": "Test command.",
+            "permission": 500,
+            "function": true
+          },
+          {
+            "name": "test2"
+          }
+        ]
+      ]
+    }
+  },
+  "definitions": {
+    "command": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Uniquely identifies the command to the CommandParser."
+        },
+        "usage": {
+          "type": "string",
+          "description": "Usage information (How to use args).",
+          "default": ""
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of command.",
+          "default": ""
+        },
+        "permission": {
+          "type": "integer",
+          "description": "The permission level the CommandSource requires to run the command.",
+          "default": 0,
+          "minimum": -1
+        },
+        "function": {
+          "type": "boolean",
+          "description": "Whether there is an associated python module to load.",
+          "default": false
+        },
+        "children": {
+          "type": "array",
+          "description": "Sub-commands; these are handled by the parent's function. (No associated modules for themselves).",
+          "items": { "$ref":  "#/definitions/command"},
+          "uniqueItems": true,
+          "examples": [
+            [
+              {
+                "name": "child"
+              },
+              {
+                "name": "child2",
+                "usage": "test child2 [*args:any]",
+                "description": "Sub-command.",
+                "permission": 1000
+              }
+            ]
+          ]
+        },
+        "overridable": {
+          "type": "boolean",
+          "description": "Whether the CommandParser can override any data inside this object (must be manually disabled).",
+          "default": true
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "If true still load command, but raise a DisabledError when attempting to execute.",
+          "default": false
+        }
+      },
+      "dependencies": {
+        "disabled": ["function"]
+      }
+    }
+  },
+  "examples": [
+    {
+      "commandPrefix": "!",
+      "commands": []
+    }
+  ]
+}
