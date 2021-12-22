@@ -1,7 +1,7 @@
 ###################################################################################################
 #                              MIT Licence (C) 2021 Cubicpath@Github                              #
 ###################################################################################################
-"""Parser for Dynamic Commands."""
+"""Main command parser module for Dynamic Commands."""
 import json
 import operator
 from pathlib import Path

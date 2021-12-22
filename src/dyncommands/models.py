@@ -1,7 +1,7 @@
 ###################################################################################################
 #                              MIT Licence (C) 2021 Cubicpath@Github                              #
 ###################################################################################################
-"""Models for Dynamic Commands."""
+"""Simple object models that are easily extendable and used during parsing."""
 from collections.abc import Callable
 from typing import Any
 from typing import Optional

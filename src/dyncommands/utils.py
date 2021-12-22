@@ -1,7 +1,7 @@
 ###################################################################################################
 #                              MIT Licence (C) 2021 Cubicpath@Github                              #
 ###################################################################################################
-"""Utils for Dynamic Commands"""
+"""Util functions, classes, and attributes for Dynamic Commands"""
 from collections.abc import Callable
 from typing import SupportsIndex
 
