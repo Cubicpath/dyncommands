@@ -23,7 +23,6 @@ with (Path(__file__).parent / 'schemas/commands.json').open(mode='r', encoding='
 class CommandData(dict):
     __slots__ = ('commands', 'commandPrefix')
     SCHEMA = SCHEMA
-
     Draft7Validator.check_schema(SCHEMA)
     Validator = Draft7Validator(SCHEMA)
 
