@@ -112,8 +112,8 @@ class Command(Node):
                     final_node = final_node.children.get(arg, final_node)
 
                 if source.has_permission(final_node.permission) or parser._ignore_permission:
-                    # Proxy public attributes of kwargs
-                    kwargs = {kwarg: PrivateProxy(kwval, lambda attr: True in (string in attr for string in ('path',))) for kwarg, kwval in kwargs.items()}
+                    # Proxy public attributes of kwargs; exclude Path attributes
+                    kwargs = {kwarg: PrivateProxy(kwval, lambda attr: isinstance(attr, Path)) for kwarg, kwval in kwargs.items()}
                     return self._function(*args, **kwargs)
                 raise NoPermissionError(final_node, context)
             except Exception as e:

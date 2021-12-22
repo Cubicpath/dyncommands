@@ -67,6 +67,9 @@
           "default": false
         }
       },
+      "definitions": {
+        "command": { "$ref":  "#" }
+      },
       "dependencies": {
         "disabled": ["function"]
       }
