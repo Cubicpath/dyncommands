@@ -38,7 +38,7 @@ class CommandData(dict):
             self.description:   str = self.get('description', '')
             self.usage:         str = self.get('usage', '')
             self.permission:    int = self.get('permission', 0)
-            self.function:      Optional[bool] = self.get('function', False)
+            self.function:      Optional[bool] = self.get('function', None)
             self.children:      list[CommandData.SchemaCommand] = [CommandData.SchemaCommand(child) for child in self.get('children', [])]
             self.overridable:   bool = self.get('overridable', True)
             self.disabled:      bool = self.get('disabled', False)
