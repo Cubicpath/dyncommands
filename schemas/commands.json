@@ -13,7 +13,6 @@
     "commands": {
       "type": "array",
       "description": "Array containing command objects.",
-      "contains": { "$ref":  "#/definitions/command" },
       "items": { "$ref":  "#/definitions/command" },
       "uniqueItems": true,
       "examples": [
@@ -78,7 +77,6 @@
         "children": {
           "type": "array",
           "description": "Sub-commands; these are handled by the parent's function. (No associated modules for themselves).",
-          "contains": { "$ref":  "#/definitions/command" },
           "items": { "$ref":  "#/definitions/command" },
           "uniqueItems": true
         },
