@@ -22,6 +22,7 @@ from RestrictedPython.Guards import safer_getattr
 
 from .exceptions import *
 from .models import *
+from .schema import *
 from .utils import *
 
 __all__ = (
@@ -48,6 +49,7 @@ class _CommandPolicy(RestrictingNodeTransformer):
     ...
 
 
+# noinspection PyProtectedMember
 class Command(Node):
     """Dynamic command object. Created on demand by a CommandParser."""
     __slots__ = ('_function',)
@@ -59,14 +61,14 @@ class Command(Node):
         self._function = DUMMY_FUNC
 
         for command in parser.command_data:
-            if command['name'] == self.name:
-                self.usage = command.get('usage', self.usage)
-                self.description = command.get('description', self.description)
-                self.permission = command.get('permission', self.permission)
-                self.children = CaseInsensitiveDict({props['name']: Node(parent=self, **props) for props in command.get('children', [])})
-                self.disabled = command.get('disabled', self.disabled)
+            if command.name == self.name:
+                self.usage = command.usage
+                self.description = command.description
+                self.permission = command.permission
+                self.children = CaseInsensitiveDict({props.name: Node(parent=self, **props) for props in command.children})
+                self.disabled = command.disabled
 
-                if command.get('function', False) is True:  # True, False, and None
+                if command.function is True:  # True, False, and None
                     self._load_function(parser)
 
     def __call__(self, *args, **kwargs) -> Optional[str]:
@@ -93,7 +95,6 @@ class Command(Node):
             parser.print(f"Loading file {module_path} from disk into '{self.name}'.")
             self._function = namespace.get('command', DUMMY_FUNC)
 
-    # noinspection PyProtectedMember
     def _execute(self, *args, **kwargs) -> Optional[str]:
         """Command (or last node)'s permission must be at least 0 and equal to or less than the source's permission level.
 
@@ -129,14 +130,14 @@ class CommandParser:
         :param silent: If true, stops all debug printing.
         :param ignore_permission: If true, permission level is not taken into account when executing a command.
         """
-        self.commands:          CaseInsensitiveDict[Command] = CaseInsensitiveDict()
-        self.command_data:      list[dict[str, Any]] = []
-        self.commands_path:     Path = Path(commands_path)
-        self.delimiting_str:    str = ' '
-        self._command_prefix:   str = '/'
-        self._current_command:  Optional[Command] = None
-        self._ignore_permission: bool = ignore_permission
-        self._silent:           bool = silent
+        self.commands:            CaseInsensitiveDict[Command] = CaseInsensitiveDict()
+        self.command_data:        list[CommandData.SchemaCommand] = []
+        self.commands_path:       Path = Path(commands_path)
+        self.delimiting_str:      str = ' '
+        self._command_prefix:     str = '/'
+        self._current_command:    Optional[Command] = None
+        self._ignore_permission:  bool = ignore_permission
+        self._silent:             bool = silent
 
         self.reload()
 
@@ -164,18 +165,19 @@ class CommandParser:
         json_path: Path = self.commands_path / 'commands.json'
 
         with json_path.open(mode='r', encoding='utf8') as file:
-            json_data = json.load(file)
+            json_data: CommandData = CommandData(json.load(file))
 
-        self._command_prefix = json_data['commandPrefix']
-        self.command_data = json_data['commands']
-        self.commands = CaseInsensitiveDict({command['name']: Command(command['name'], self) for command in self.command_data})
+        self._command_prefix = json_data.commandPrefix
+        self.command_data = json_data.commands
+        self.commands = CaseInsensitiveDict({command.name: Command(command.name, self) for command in self.command_data})
 
         # Load json data a second time to check for any remnant commands in memory that weren't removed during failed compilation
         with json_path.open(mode='r', encoding='utf8') as file:
-            updated_json_data = json.load(file)
+            updated_json_data: CommandData = CommandData(json.load(file))
+
         if json_data != updated_json_data:
-            self.command_data = updated_json_data['commands']
-            self.commands = CaseInsensitiveDict({command['name']: Command(command['name'], self) for command in self.command_data})
+            self.command_data = updated_json_data.commands
+            self.commands = CaseInsensitiveDict({command.name: Command(command.name, self) for command in self.command_data})
 
     def parse(self, context: CommandContext, **kwargs) -> None:
         """Parse a CommandContext's working_string for commands and arguments, then execute them.
@@ -407,8 +409,8 @@ class CommandParser:
         :param name: Name of command to remove.
         :return: {name} if successful, else empty string.
         """
-        json_path:   Path = Path(f'{self.commands_path}/commands.json')
-        module_path: Path = Path(f'{self.commands_path}/zzz__{name}.py')
+        json_path:   Path = self.commands_path / 'commands.json'
+        module_path: Path = self.commands_path / f'zzz__{name}.py'
         removed:     bool = False
 
         with json_path.open(mode='r', encoding='utf8') as file:

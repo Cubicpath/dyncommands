@@ -1,5 +1,5 @@
 {
-  "$id": "https://raw.githubusercontent.com/Cubicpath/dyncommands/master/schemas/commands.json",
+  "$id": "https://raw.githubusercontent.com/Cubicpath/dyncommands/master/src/dyncommands/schemas/commands.json",
   "$schema": "http://json-schema.org/draft-07/schema",
   "title": "Command metadata",
   "description": "https://github.com/Cubicpath/dyncommands/blob/master/README.md#command-metadata",
@@ -70,9 +70,12 @@
           "minimum": -1
         },
         "function": {
-          "type": "boolean",
+          "oneOf": [
+            {"type":  "null"},
+            {"type":  "boolean"}
+          ],
           "description": "Whether there is an associated python module to load.",
-          "default": false
+          "default": null
         },
         "children": {
           "type": "array",

@@ -7,7 +7,7 @@
 # 2) We can load it in setup.cfg
 # 3) We can import it into modules
 
-__version_info__ = (1, 1, 2, 'final', 0)
+__version_info__ = (1, 2, 0, 'preview', 0)
 """Major, Minor, Micro, Release level, Serial in respective order."""
 
 
@@ -30,7 +30,7 @@ def _stringify(major: int, minor: int, micro: int = 0, releaselevel: str = 'fina
     Ex: (3, 10, 0, 'candidate', 0) -> 3.10rc
     Ex: (3, 9, 1, 'alpha', 3) -> 3.9.2a3
     Ex: (3, 9, 1, dev=2) -> 3.9.2.dev2
-    Ex: (3, 9, 2, 'preview', 3, post=0, post_implicit=True, dev=5) -> 3.9.2rc3-0.dev5
+    Ex: (3, 9, 2, 'preview', 3, post=0, post_implicit=True, dev=5) -> 3.9.2pre3-0.dev5
     Ex: (1, 0, local='ubuntu', local_ver='2', local_ver_sep='-') -> 1.0+ubuntu-2
 
     :param major: First and most important version number.
@@ -81,7 +81,7 @@ def _stringify(major: int, minor: int, micro: int = 0, releaselevel: str = 'fina
 
     for attr in ('major', 'minor', 'micro', 'local_ver', 'post', 'dev', 'dev_post'):
         if vars()[attr] is not None and not isinstance(vars()[attr], int):
-            raise TypeError(f'Argument "{attr}" should be of type {int}')
+            raise TypeError(f'Argument "{attr}" should be of type {int}')  # pragma: no cover
     if False in (v in separators for v in (pre_sep, pre_ver_sep, post_sep, post_ver_sep, dev_sep, dev_post_sep, dev_post_ver_sep)) or local_ver_sep not in separators[1:]:
         raise ValueError(f'A separator given is not in allowed separators {separators}')
     if post_spelling not in post_spellings:

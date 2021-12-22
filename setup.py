@@ -1,4 +1,4 @@
 from setuptools import setup
 
 if __name__ == '__main__':
-    setup(package_data={'': ['py.typed']})
+    setup(package_data={'': ['py.typed', 'schemas/*']})
