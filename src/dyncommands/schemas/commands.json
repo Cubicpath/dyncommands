@@ -14,34 +14,7 @@
       "type": "array",
       "description": "Array containing command objects.",
       "items": { "$ref":  "#/definitions/command" },
-      "uniqueItems": true,
-      "examples": [
-        [
-          {
-            "name": "test",
-            "usage": "test [*args:any]",
-            "description": "Test command.",
-            "permission": 500,
-            "function": true
-          },
-          {
-            "name": "test2",
-            "usage": "test2 [child | child2 [*args:any]]",
-            "children": [
-              {
-                "name": "child",
-                "usage": "test2 child"
-              },
-              {
-                "name": "child2",
-                "usage": "test child2 [*args:any]",
-                "description": "Sub-command.",
-                "permission": 1000
-              }
-            ]
-          }
-        ]
-      ]
+      "uniqueItems": true
     }
   },
   "definitions": {
@@ -102,7 +75,31 @@
   "examples": [
     {
       "commandPrefix": "!",
-      "commands": []
+      "commands": [
+        {
+          "name": "test",
+          "usage": "test [*args:any]",
+          "description": "Test command.",
+          "permission": 500,
+          "function": true
+        },
+        {
+          "name": "test2",
+          "usage": "test2 [child | child2 [*args:any]]",
+          "children": [
+            {
+              "name": "child",
+              "usage": "test2 child"
+            },
+            {
+              "name": "child2",
+              "usage": "test child2 [*args:any]",
+              "description": "Sub-command.",
+              "permission": 1000
+            }
+          ]
+        }
+      ]
     }
   ]
 }
