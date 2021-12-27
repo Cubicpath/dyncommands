@@ -1,4 +1,5 @@
 {
+  "$schema": "https://raw.githubusercontent.com/Cubicpath/dyncommands/master/src/dyncommands/schemas/commands.schema.json#",
   "commandPrefix": "!",
   "commands": [
     {
