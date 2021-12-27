@@ -25,28 +25,54 @@ All command modules are compiled through [RestrictedPython](https://github.com/z
 How to use:
 ---------------
 
+### Short example:
+
+```python
+from pathlib import Path
+from dyncommands import CommandParser, CommandContext, CommandSource
+
+output: str = ''
+
+def callback(text, *args):
+    global output
+    output = text
+
+path = Path('path/to/directory')  # Must be a directory with a commands.json file in it
+parser = CommandParser(path)  # Create the parser, which initializes using data located in the path directory
+source = CommandSource(callback)  # Create a source, which is used to talk back to the caller
+
+input_ = 'command-that-returns-wow arg1 arg2'  # this command would call zzz__command-that-returns-wow.py with arg1 and arg2
+
+parser.parse(CommandContext(input_, source))  # Parse the new context and run the command and callback (If no errors occur)
+assert output == 'wow'
+```
+
 ### Command metadata:
+
 Metadata for commands are stored in the commands.json file inside the _commands_path_ of the parser.
 This is where all the data for the parser is loaded or stored.
 
-There are two top-level keys:
-- __commandPrefix__: _str_
-  - String being parsed must start with this string, otherwise it is ignored. Empty string accepts all.
-- __commands__: _array[object]_
-  - Contains command objects
+All commands.json files are validated with [JSON Schemas](https://json-schema.org/) through the [jsonschema](https://pypi.org/project/jsonschema/) python package
 
-Available metadata keys for objects inside the __commands__ array are:
+#### commands.json [Draft-07](https://tools.ietf.org/html/draft-handrews-json-schema-01) JSON Schema
 
-| key             | type          | description                                                                                       |
-|-----------------|---------------|---------------------------------------------------------------------------------------------------|
-| name (Required) | string        | Uniquely identifies the command to the CommandParser.                                             |
-| usage           | string        | Usage information (How to use args)                                                               |
-| description     | string        | Description of command                                                                            |
-| permission      | integer       | The permission level the CommandSource requires to run the command.                               |
-| function        | boolean       | Whether there is an associated python module to load.                                             |
-| children        | array[object] | Sub-commands; these are handled by the parent's function. (No associated modules for themselves). |
-| overridable     | boolean       | Whether the CommandParser can override any data inside this object (must be manually enabled).    |
-| disabled        | boolean       | If __true__ still load command, but raise a DisabledError when attempting to execute.             |
+| key                      | type           | description                                                                             | default |
+|--------------------------|----------------|-----------------------------------------------------------------------------------------|---------|
+| commandPrefix (Required) | string         | Strings must start with this prefix, otherwise it is ignored. Empty string accepts all. | N/A     |
+| commands (Required)      | array[Command] | Contains metadata for the stored command modules.                                       | N/A     |
+
+#### Command object [Draft-07](https://tools.ietf.org/html/draft-handrews-json-schema-01) JSON Schema
+
+| key             | type           | description                                                                                       | default |
+|-----------------|----------------|---------------------------------------------------------------------------------------------------|---------|
+| name (Required) | string         | Uniquely identifies the command to the CommandParser.                                             | N/A     |
+| usage           | string         | Usage information (How to use args).                                                              | ""      |
+| description     | string         | Description of command.                                                                           | ""      |
+| permission      | integer        | The permission level the CommandSource requires to run the command.                               | 0       |
+| function        | boolean, null  | Whether there is an associated python module to load.                                             | null    |
+| children        | array[Command] | Sub-commands; these are handled by the parent's function. (No associated modules for themselves). | []      |
+| overridable     | boolean        | Whether the CommandParser can override any data inside this object (must be manually enabled).    | true    |
+| disabled        | boolean        | If __true__ still load command, but raise a DisabledError when attempting to execute.             | false   |
 
 __NOTE:__ Commands modules are not loaded unless they are listed in commands.json with the "function" key set to true.
 
@@ -84,7 +110,7 @@ and stored in memory for execution. The function has access to any args that wer
 
 - Any custom kwargs passed to CommandParser.parse.
 
-Since commands cannot import heir own modules, some are included in globals (math, random, and string).
+Since commands cannot import their own modules, some are included in globals (math, random, and string).
 
 #### Example command module:
 ```python
