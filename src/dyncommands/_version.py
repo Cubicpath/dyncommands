@@ -56,7 +56,9 @@ def _stringify(major: int, minor: int, micro: int = 0, releaselevel: str = 'fina
     :raises TypeError: Version numbers are not integers.
     :raises ValueError: Version separators are not in the allowed chars.
     """
-    local, local_ver, local_ver_sep, pre_sep, pre_ver_sep, post, post_spelling, post_implicit, post_sep, post_ver_sep, dev, dev_sep, dev_post, dev_post_sep, dev_post_ver_sep = (
+    (local, local_ver, local_ver_sep, pre_sep, pre_ver_sep,
+     post, post_spelling, post_implicit, post_sep, post_ver_sep,
+     dev, dev_sep, dev_post, dev_post_sep, dev_post_ver_sep) = (
         kwargs.pop('local', None),
         kwargs.pop('local_ver', 0),
         kwargs.pop('local_ver_sep', '.'),
@@ -82,7 +84,8 @@ def _stringify(major: int, minor: int, micro: int = 0, releaselevel: str = 'fina
     for attr in ('major', 'minor', 'micro', 'local_ver', 'post', 'dev', 'dev_post'):
         if vars()[attr] is not None and not isinstance(vars()[attr], int):
             raise TypeError(f'Argument "{attr}" should be of type {int}')  # pragma: no cover
-    if False in (v in separators for v in (pre_sep, pre_ver_sep, post_sep, post_ver_sep, dev_sep, dev_post_sep, dev_post_ver_sep)) or local_ver_sep not in separators[1:]:
+    if (False in (sep in separators for sep in (pre_sep, pre_ver_sep, post_sep, post_ver_sep, dev_sep, dev_post_sep, dev_post_ver_sep)) or
+            local_ver_sep not in separators[1:]):
         raise ValueError(f'A separator given is not in allowed separators {separators}')
     if post_spelling not in post_spellings:
         raise ValueError(f'Post-release spelling not allowed as "{post_spelling}"')

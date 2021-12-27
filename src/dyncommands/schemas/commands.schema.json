@@ -1,7 +1,7 @@
 {
-  "$id": "https://raw.githubusercontent.com/Cubicpath/dyncommands/master/src/dyncommands/schemas/commands.json",
-  "$schema": "http://json-schema.org/draft-07/schema",
-  "title": "Command metadata",
+  "$id": "https://raw.githubusercontent.com/Cubicpath/dyncommands/master/src/dyncommands/schemas/commands.schema.json#",
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "CommandParser storage",
   "description": "https://github.com/Cubicpath/dyncommands/blob/master/README.md#command-metadata",
   "required": ["commandPrefix", "commands"],
   "type": "object",
@@ -12,15 +12,19 @@
     },
     "commands": {
       "type": "array",
-      "description": "Array containing command objects.",
+      "description": "Contains metadata for the stored command modules.",
       "items": { "$ref":  "#/definitions/command" },
       "uniqueItems": true
     }
   },
   "definitions": {
     "command": {
-      "type": "object",
+      "$id": "https://raw.githubusercontent.com/Cubicpath/dyncommands/master/src/dyncommands/schemas/command.schema.json#",
+      "$schema": "https://json-schema.org/draft-07/schema#",
+      "title": "Command metadata",
+      "description": "https://github.com/Cubicpath/dyncommands/blob/master/README.md#command-metadata",
       "required": ["name"],
+      "type": "object",
       "properties": {
         "name": {
           "type": "string",
@@ -44,8 +48,8 @@
         },
         "function": {
           "oneOf": [
-            {"type":  "null"},
-            {"type":  "boolean"}
+            { "type": "null" },
+            { "type": "boolean" }
           ],
           "description": "Whether there is an associated python module to load.",
           "default": null
@@ -53,7 +57,7 @@
         "children": {
           "type": "array",
           "description": "Sub-commands; these are handled by the parent's function. (No associated modules for themselves).",
-          "items": { "$ref":  "#/definitions/command" },
+          "items": { "$ref": "#" },
           "uniqueItems": true,
           "default": []
         },
@@ -67,9 +71,6 @@
           "description": "If true still load command, but raise a DisabledError when attempting to execute.",
           "default": false
         }
-      },
-      "definitions": {
-        "command": { "$ref":  "#" }
       },
       "dependencies": {
         "disabled": ["function"]

@@ -24,7 +24,7 @@ class Node:
     """Common object that stores metadata and child nodes."""
     __slots__ = ('_parent', '_name', 'usage', 'description', 'permission', 'children', 'disabled')
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         """Initialize and load any kwargs as attributes.
 
         Supported kwargs are:
@@ -42,7 +42,9 @@ class Node:
         self.usage:         str = kwargs.pop('usage', '')
         self.description:   str = kwargs.pop('description', '')
         self.permission:    int = kwargs.pop('permission', 0)
-        self.children:      CaseInsensitiveDict['Node'] = CaseInsensitiveDict({props['name']: Node(parent=self, **props) for props in kwargs.pop('children', [])})
+        self.children:      CaseInsensitiveDict['Node'] = CaseInsensitiveDict(
+            {props['name']: Node(parent=self, **props) for props in kwargs.pop('children', [])}
+        )
         self.disabled:      bool = kwargs.pop('disabled', False)
 
         if self._parent is not None:
@@ -56,14 +58,17 @@ class Node:
             return other is self or (self.parent == other.parent and self.name == other.name)
         return False
 
-    def __str__(self) -> str: return f'{(str(self.parent) + "__") if (self.parent is not None and self.parent is not self) else "root:__"}{self.name}'
+    def __str__(self) -> str:
+        return f'{(str(self.parent) + "__") if (self.parent is not None and self.parent is not self) else "root:__"}{self.name}'
 
     @property
-    def name(self) -> str: return self._name
+    def name(self) -> str:
+        """:return: This Node's name."""
+        return self._name
 
     @name.setter
     def name(self, value: str) -> None:
-        """Set this node's name to value and update self in parent's children.
+        """Set this Node's name to value and update self in parent's children.
         :param value: Node or None to set as parent.
         """
         if self._parent is not None:
@@ -72,11 +77,13 @@ class Node:
         self._name = value
 
     @property
-    def parent(self) -> 'Node': return self._parent
+    def parent(self) -> Optional['Node']:
+        """:return: The parent Node to this Node, if any."""
+        return self._parent
 
     @parent.setter
     def parent(self, value: Optional['Node']) -> None:
-        """Set this node's parent to value and remove self from old parent's children.
+        """Set this Node's parent to value and remove self from old parent's children.
         :param value: Node or None to set as parent.
         """
         if self._parent is not None:
@@ -115,7 +122,8 @@ class CommandSource:
         self.permission = 0
         self._feedback_callback = feedback_callback
 
-    def __str__(self) -> str: return self.display_name
+    def __str__(self) -> str:
+        return self.display_name
 
     def send_feedback(self, text: str, *args, **kwargs) -> None:
         """Send text, along with any other args and kwargs, to the callback defined during object initialization.

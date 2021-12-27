@@ -35,7 +35,7 @@ class TestPrivateProxy(unittest.TestCase):
     def test_include_attr(self) -> None:
         """Inclusion of normally excluded attrs"""
         # Proxy a str object; proxies additional dunder methods __add__, __mul__ and __str__
-        proxy = PrivateProxy('foo', include_predicate=lambda attr: attr in ('__add__', '__mul__', '__str__'))
+        proxy = PrivateProxy('foo', include_predicate=lambda attr, *_: attr in ('__add__', '__mul__', '__str__'))
         self.assertNotEqual('foo', proxy)
         self.assertEqual('foo', proxy.__str__())
         self.assertEqual('foobar', proxy.__str__() + 'bar')
@@ -48,16 +48,14 @@ class TestPrivateProxy(unittest.TestCase):
         """Exclusion of single attr"""
         proxy = PrivateProxy('foo')
         # Remove isalpha attribute from existing proxy object
-        proxy = PrivateProxy(proxy, exclude_predicate=lambda attr: attr == 'isalpha')
+        proxy = PrivateProxy(proxy, exclude_predicate=lambda attr, *_: attr == 'isalpha')
         self.assertRaises(AttributeError, lambda: proxy.isalpha())
         self.assertTrue(proxy.isalnum())
         self.assertTrue(proxy.isascii())
 
         # No changes, attribute already removed
-        proxy = PrivateProxy(proxy, include_predicate=lambda attr: attr == 'isalpha')
+        proxy = PrivateProxy(proxy, include_predicate=lambda attr, *_: attr == 'isalpha')
         self.assertRaises(AttributeError, lambda: proxy.isalpha())
-        self.assertTrue(proxy.isalnum())
-        self.assertTrue(proxy.isascii())
 
 
 class TestFunctions(unittest.TestCase):

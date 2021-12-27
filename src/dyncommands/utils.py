@@ -3,6 +3,7 @@
 ###################################################################################################
 """Util functions, classes, and attributes for Dynamic Commands"""
 from collections.abc import Callable
+from typing import Any
 from typing import SupportsIndex
 
 import requests
@@ -20,10 +21,12 @@ DUMMY_FUNC = lambda *args, **kwargs: None
 class PrivateProxy:
     """Proxy for private object attributes."""
 
+    # pylint: disable=eval-used
     def __init__(self, o: object,
-                 exclude_predicate: Callable[[str], bool] = lambda attr: False,
-                 include_predicate: Callable[[str], bool] = lambda attr: False,
-                 starting_underscore_private: bool = True):
+                 exclude_predicate: Callable[[str, Any], bool] = lambda attr, attr_val: False,
+                 include_predicate: Callable[[str, Any], bool] = lambda attr, attr_val: False,
+                 starting_underscore_private: bool = True,
+                 eval_for_attribute_values: bool = True):
         """Object that proxies another object, created to prevent methods from accessing private data.
 
         All attributes starting with _ are by default considered private and are not proxied through.
@@ -32,10 +35,14 @@ class PrivateProxy:
         :arg exclude_predicate: If an attribute name passes the given predicate, it's then considered private.
         :arg include_predicate: If an attribute name passes the given predicate, it will be proxied regardless of private status.
         :arg starting_underscore_private: All attributes starting with an underscore are private if True.
+        :arg eval_for_attribute_values: Must be true to work with objects using __slots__.
         """
 
         for attr in dir(o):
-            if include_predicate(attr) is False and ((attr.startswith('_') and starting_underscore_private) or exclude_predicate(attr) is True):
+            # Allow use of eval to ensure compatibility with objects using __slots__ as they do not have a __dict__ and attributes must be evaluated
+            attr_val: Any = eval(f'o.{attr}', {'o': o}) if eval_for_attribute_values else vars(o).get(attr)
+            is_private = exclude_predicate(attr, attr_val) or (attr.startswith('_') and starting_underscore_private)
+            if is_private and include_predicate(attr, attr_val) is False:
                 # Don't proxy attr
                 continue
             # Proxy attr

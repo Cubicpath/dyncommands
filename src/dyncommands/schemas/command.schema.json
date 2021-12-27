@@ -1,0 +1,58 @@
+{
+  "$id": "https://raw.githubusercontent.com/Cubicpath/dyncommands/master/src/dyncommands/schemas/command.schema.json#",
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Command metadata",
+  "description": "https://github.com/Cubicpath/dyncommands/blob/master/README.md#command-metadata",
+  "required": ["name"],
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Uniquely identifies the command to the CommandParser."
+    },
+    "usage": {
+      "type": "string",
+      "description": "Usage information (How to use args).",
+      "default": ""
+    },
+    "description": {
+      "type": "string",
+      "description": "Description of command.",
+      "default": ""
+    },
+    "permission": {
+      "type": "integer",
+      "description": "The permission level the CommandSource requires to run the command.",
+      "default": 0,
+      "minimum": -1
+    },
+    "function": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "boolean" }
+      ],
+      "description": "Whether there is an associated python module to load.",
+      "default": null
+    },
+    "children": {
+      "type": "array",
+      "description": "Sub-commands; these are handled by the parent's function. (No associated modules for themselves).",
+      "items": { "$ref": "#" },
+      "uniqueItems": true,
+      "default": []
+    },
+    "overridable": {
+      "type": "boolean",
+      "description": "Whether the CommandParser can override any data inside this object (must be manually disabled).",
+      "default": true
+    },
+    "disabled": {
+      "type": "boolean",
+      "description": "If true still load command, but raise a DisabledError when attempting to execute.",
+      "default": false
+    }
+  },
+  "dependencies": {
+    "disabled": ["function"]
+  }
+}
