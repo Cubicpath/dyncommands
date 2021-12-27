@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Run pylint" type="ShConfigurationType">
-    <option name="SCRIPT_TEXT" value="pylint src --rcfile=tox.ini --load-plugins=&quot;pylint.extensions.docparams,pylint.extensions.docstyle,pylint.extensions.typing&quot;" />
+    <option name="SCRIPT_TEXT" value="pylint src" />
     <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
     <option name="SCRIPT_PATH" value="" />
     <option name="SCRIPT_OPTIONS" value="" />

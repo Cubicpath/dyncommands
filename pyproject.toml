@@ -2,8 +2,82 @@
 requires = ["setuptools>=42.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.pylint.'MASTER']
+jobs=0
+load-plugins=[
+    "pylint.extensions.docparams",
+    "pylint.extensions.docstyle",
+    "pylint.extensions.typing"
+]
+py-version="3.9"
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = [
+    "C",    # Conventions
+    "R",    # Reformats
+    "protected-access", # W0212
+    "wildcard-import",  # W0401
+    # These do not work with starred parameter names
+    "missing-param-doc",    # W9015
+    "differing-param-doc",  # W9017
+    # These do not work with wildcard imports using __all__
+    "import-error",             # E0401
+    "undefined-variable",       # E0602
+    "undefined-all-variable",   # E0603
+]
+enable = [
+    "missing-class-docstring",      # C0115
+    "missing-function-docstring",   # C0116
+    "line-too-long",                # C0301
+    "consider-using-ternary",       # R1706
+]
+
+[tool.pylint.'REPORTS']
+output-format = "parseable"
+reports = "no"
+
+[tool.pylint.'FORMAT']
+good-names = [
+    "e",
+    "i",
+    "o",
+    "x",
+    "_",
+    "__",
+]
+max-line-length=160
+
 [tool.pytest.ini_options]
 addopts = "--cov=dyncommands --cov-report=html"
 testpaths = [
     "tests",
 ]
+
+# Currently only the old format (ConfigParser ini-style) via legacy_tox_ini, a native implementation is planned though.
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+minversion = 3.8.0
+envlist = py39, py310, pylint
+isolated_build = true
+
+[gh-actions]
+python =
+    3.9: py39
+    3.10: py310, pylint
+
+[testenv]
+setenv =
+    PYTHONPATH = {toxinidir}
+deps =
+    -r{toxinidir}/requirements.txt
+    -r{toxinidir}/requirements_dev.txt
+extras = test
+commands =
+    pytest --basetemp={envtmpdir} --no-cov
+
+[testenv:pylint]
+deps = pylint
+commands =
+    pylint src --rcfile=pyproject.toml
+"""
