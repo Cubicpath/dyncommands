@@ -14,6 +14,7 @@ repos:
               "src", # Only lint src
               "-rn", # Only display messages
               "-sn", # Don't display the score
+              "--ignore-patterns=test_"
           ]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks

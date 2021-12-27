@@ -52,104 +52,130 @@ class _CommandPolicy(RestrictingNodeTransformer):
 # noinspection PyProtectedMember
 class Command(Node):
     """Dynamic command object. Created on demand by a CommandParser."""
-    __slots__ = ('_function',)
+    __slots__ = ('_function', '_parser')
 
-    def __init__(self, name: str, parser: 'CommandParser') -> None:
+    def __init__(self, data: Optional[CommandData], parser: 'CommandParser') -> None:
         """Build command from parser data and matching zzz__ modules."""
         super().__init__()
-        self.name = name
         self._function = DUMMY_FUNC
+        self._parser = parser
+        if data is not None:
+            self.name = data.name
+            self.usage = data.usage
+            self.description = data.description
+            self.permission = data.permission
+            self.children = CaseInsensitiveDict({props.name: Node(parent=self, **props) for props in data.children})
+            self.disabled = data.disabled
 
-        for command in parser.command_data:
-            if command.name == self.name:
-                self.usage = command.usage
-                self.description = command.description
-                self.permission = command.permission
-                self.children = CaseInsensitiveDict({props.name: Node(parent=self, **props) for props in command.children})
-                self.disabled = command.disabled
-
-                if command.function is True:  # True, False, and None
-                    self._load_function(parser)
+            if data.function is True:  # True, False, and None
+                self._load_function()
 
     def __call__(self, *args, **kwargs) -> Optional[str]:
         """Syntax sugar for self._execute."""
         return self._execute(*args, **kwargs)
 
+    def _should_hide_attr(self, name: str, o: Any) -> bool:
+        if self._parser._unrestricted:
+            return False
+
+        # Include already proxied objects
+        return not isinstance(o, PrivateProxy) and (
+                isinstance(o, Path) or  # Exclude Path attributes
+                name.startswith('_')  # Exclude protected attributes
+        )
+
     # pylint: disable=exec-used
-    def _load_function(self, parser: 'CommandParser'):
+    def _load_function(self) -> None:
         """Loads in python code from storage for future execution."""
-        module_path: Path = parser.commands_path / f'zzz__{self.name}.py'
+        module_path: Path = self._parser.commands_path / f'zzz__{self.name}.py'
         namespace:   dict[str, Any] = {}
 
         try:
             with module_path.open(mode='r', encoding='utf8') as file:
                 # Attempt to compile code and run function definition
                 plaintext_code = file.read()
-                byte_code = safe_compile(plaintext_code, str(module_path), 'exec', policy=_CommandPolicy)
-                exec(byte_code, command_globals, namespace)
+                if not self._parser._unrestricted:
+                    # Restricted
+                    byte_code = safe_compile(plaintext_code, str(module_path), 'exec', policy=_CommandPolicy)
+                    exec(byte_code, command_globals, namespace)
+                else:
+                    # Unrestricted
+                    byte_code = compile(plaintext_code, str(module_path), 'exec')
+                    exec(byte_code, globals(), locals())
         except (FileNotFoundError, SyntaxError, NotImplementedError) as e:
-            parser.print(str(e))
-            parser.print(f"Discarding broken command '{self.name}' from {module_path}.")
-            parser.remove_command(self.name)
+            self._parser.print(str(e))
+            self._parser.print(f"Discarding broken command '{self.name}' from {module_path}.")
+            self._parser.remove_command(self.name)
         else:
-            parser.print(f"Loading file {module_path} from disk into '{self.name}'.")
+            self._parser.print(f"Loading file {module_path} from disk into '{self.name}'.")
             self._function = namespace.get('command', DUMMY_FUNC)
 
     def _execute(self, *args, **kwargs) -> Optional[str]:
         """Command (or last node)'s permission must be at least 0 and equal to or less than the source's permission level.
 
-        Otherwise, it will not execute.
+        Note: an argument with a permission property set to 0 will always run, regardless of the base command's permissions.
+
+        :raises CommandError: If any exceptions are caught during.
+        :raises DisabledError: When command specified in the contextual working string is disabled.
+        :raises NoPermissionError: When contextual source does not have the required permissions.
         """
         context: CommandContext = kwargs['context']
         parser: 'CommandParser' = kwargs['parser']
-        source: CommandSource = context.source
         kwargs['self'] = self
-        if not self.disabled:
-            try:
-                # Get permission level of last argument with properties, or the command itself if no args with properties
-                final_node: Node = self
-                for arg in args:
-                    final_node = final_node.children.get(arg, final_node)
 
-                if source.has_permission(final_node.permission) or parser._ignore_permission:
-                    # Proxy public attributes of kwargs; exclude Path attributes
-                    kwargs = {kwarg: PrivateProxy(kwval, lambda attr: isinstance(attr, Path)) for kwarg, kwval in kwargs.items()}
-                    return self._function(*args, **kwargs)
-                raise NoPermissionError(final_node, context)
-            except Exception as e:
-                raise CommandError(self, context, e) from e
-        else:
-            raise DisabledError(self, context)
+        if not self.disabled:
+            # Get permission level of last argument with properties, or the command itself if no args with properties
+            final_node: Node = self
+            for arg in args:
+                final_node = final_node.children.get(arg, final_node)
+            if context.source.has_permission(final_node.permission) or parser._ignore_permission:
+                # Proxy public attributes of kwargs; exclude Path attributes
+                if not self._parser._unrestricted:
+                    kwargs = {kwarg: PrivateProxy(kwval, self._should_hide_attr) for kwarg, kwval in kwargs.items()}
+                    try:
+                        return self._function(*args, **kwargs)
+                    except Exception as e:
+                        raise CommandError(self, context, e) from e
+
+            raise NoPermissionError(final_node, context)
+        raise DisabledError(self, context)
 
 
 class CommandParser:
     """Keeps track of all commands and command metadata. Allows for dynamic execution of commands through string parsing."""
 
-    def __init__(self, commands_path: Union[str, Path], silent: bool = False, ignore_permission: bool = False) -> None:
+    def __init__(self, commands_path: Union[str, Path], silent: bool = False, ignore_permission: bool = False, unrestricted: bool = False) -> None:
         """Create a new Parser and load all command data from the given path.
         :param silent: If true, stops all debug printing.
         :param ignore_permission: If true, permission level is not taken into account when executing a command.
         """
         self.commands:            CaseInsensitiveDict[Command] = CaseInsensitiveDict()
-        self.command_data:        list[CommandData.SchemaCommand] = []
+        self.command_data:        list[CommandData] = []
         self.commands_path:       Path = Path(commands_path)
         self.delimiting_str:      str = ' '
         self._command_prefix:     str = '/'
         self._current_command:    Optional[Command] = None
         self._ignore_permission:  bool = ignore_permission
         self._silent:             bool = silent
+        self._unrestricted:       bool = unrestricted
+
+        if self._unrestricted:
+            self.print(f'WARNING. UNRESTRICTED MODE ON FOR {self.__repr__()} AT {self.commands_path}. DO NOT RUN UNTRUSTED CODE.')
 
         self.reload()
 
-    def __call__(self, context: CommandContext, **kwargs):
+    def __call__(self, context: CommandContext, **kwargs) -> None:
         """Syntax sugar for self.parse."""
         self.parse(context=context, **kwargs)
 
     @property
-    def prefix(self) -> str: return self._command_prefix
+    def prefix(self) -> str:
+        """:return: The current prefix needed to recognize if the given string is a command."""
+        return self._command_prefix
 
     @prefix.setter
     def prefix(self, value) -> None:
+        """Set the current prefix both in memory and in the commands.json file."""
         json_path: Path = self.commands_path / 'commands.json'
         self._command_prefix = value
         with json_path.open(mode='r', encoding='utf8') as file:
@@ -164,20 +190,25 @@ class CommandParser:
         """
         json_path: Path = self.commands_path / 'commands.json'
 
-        with json_path.open(mode='r', encoding='utf8') as file:
-            json_data: CommandData = CommandData(json.load(file))
+        if json_path.exists():
+            with json_path.open(mode='r', encoding='utf8') as file:
+                json_data: ParserData = ParserData(json.load(file))
 
-        self._command_prefix = json_data.commandPrefix
-        self.command_data = json_data.commands
-        self.commands = CaseInsensitiveDict({command.name: Command(command.name, self) for command in self.command_data})
+            self._command_prefix = json_data.command_prefix
+            self.command_data = json_data.commands
+            self.commands = CaseInsensitiveDict({command.name: Command(command, self) for command in self.command_data})
 
-        # Load json data a second time to check for any remnant commands in memory that weren't removed during failed compilation
-        with json_path.open(mode='r', encoding='utf8') as file:
-            updated_json_data: CommandData = CommandData(json.load(file))
+            # Load json data a second time to check for any remnant commands in memory that weren't removed during failed compilation
+            with json_path.open(mode='r', encoding='utf8') as file:
+                updated_json_data: ParserData = ParserData(json.load(file))
 
-        if json_data != updated_json_data:
-            self.command_data = updated_json_data.commands
-            self.commands = CaseInsensitiveDict({command.name: Command(command.name, self) for command in self.command_data})
+            if json_data != updated_json_data:
+                self.command_data = updated_json_data.commands
+                self.commands = CaseInsensitiveDict({command.name: Command(command, self) for command in self.command_data})
+
+            json_data.validate(json_data)
+        else:
+            raise FileNotFoundError(f'commands.json not in commands_path ({self.commands_path})')
 
     def parse(self, context: CommandContext, **kwargs) -> None:
         """Parse a CommandContext's working_string for commands and arguments, then execute them.
@@ -214,15 +245,15 @@ class CommandParser:
                     if isinstance(e.parent, CommandError):
                         raise e.parent from e
             else:
-                raise NotFoundError(Command(name, self), context)
+                raise NotFoundError(name, context)
 
     def print(self, *values: object, sep: Optional[str] = None, end: Optional[str] = None, file: Optional[object] = None, flush: bool = False) -> None:
         """Print if not self._silent."""
-        if not self._silent: print(*values, sep=sep, end=end, file=file, flush=flush)
+        if not self._silent:
+            print(*values, sep=sep, end=end, file=file, flush=flush)
 
     def set_disabled(self, command_name: str, value: bool) -> bool:
-        """
-        Set a command as disabled.
+        """Set a command as disabled.
 
         :param command_name: Command to disable.
         :param value: Whether disabled or not.
@@ -248,8 +279,7 @@ class CommandParser:
         return True
 
     def add_command(self, text: str, link: bool = False, **kwargs) -> str:
-        """
-        Adds a command using data read from {text}. Command metadata must either be passed in through a kwarg,
+        """Adds a command using data read from {text}. Command metadata must either be passed in through a kwarg,
         or structured as an inline python comment above the command function. Ex:
 
         # Name: do-nothing

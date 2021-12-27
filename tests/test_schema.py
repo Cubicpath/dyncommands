@@ -11,24 +11,22 @@ from jsonschema.exceptions import *
 
 from dyncommands.schema import *
 
-SchemaCommand = CommandData.SchemaCommand
-
 # Boilerplate to allow running script directly.
 if __name__ == '__main__' and __package__ is None: sys.path.insert(1, str(Path(__file__).resolve().parent.parent)); __package__ = 'tests'
 
 
-class TestSchemaCommand(unittest.TestCase):
+class TestCommandData(unittest.TestCase):
     def setUp(self) -> None:
-        self.test_command = SchemaCommand({'name': ''})
+        self.test_command = CommandData(name='')
 
-    def test_commands_json(self):
+    def test_commands_json(self) -> None:
         with (Path(__file__).parent / 'data/commands/commands.json').open(mode='r', encoding='utf8') as file:
             for command in json.loads(file.read())['commands']:
-                SchemaCommand.validate(command)
+                CommandData.validate(command)
 
-    def test_defaults(self):
-        self.assertRaises(TypeError, SchemaCommand)
-        self.assertRaises(KeyError, SchemaCommand, {})
+    def test_defaults(self) -> None:
+        self.assertRaises(KeyError, CommandData)
+        self.assertRaises(KeyError, CommandData, {})
         self.assertEqual(self.test_command.name, '')
         self.assertEqual(self.test_command.description, '')
         self.assertEqual(self.test_command.usage, '')
@@ -38,48 +36,48 @@ class TestSchemaCommand(unittest.TestCase):
         self.assertTrue(self.test_command.overridable)
         self.assertFalse(self.test_command.disabled)
 
-    def test_slots(self):
+    def test_slots(self) -> None:
         with self.assertRaises(AttributeError):
             self.test_command.non_existent = 1
 
-    def test_validate(self):
-        SchemaCommand.validate(self.test_command)
-        self.assertRaises(ValidationError, SchemaCommand.validate, {})
-        self.assertRaises(ValidationError, SchemaCommand.validate, {'name': 0})
-        self.assertRaises(ValidationError, SchemaCommand.validate, {'name': '', 'description': 0})
-        self.assertRaises(ValidationError, SchemaCommand.validate, {'name': '', 'usage': 0})
-        self.assertRaises(ValidationError, SchemaCommand.validate, {'name': '', 'permission': None})
-        self.assertRaises(ValidationError, SchemaCommand.validate, {'name': '', 'function': ''})
-        self.assertRaises(ValidationError, SchemaCommand.validate, {'name': '', 'overridable': None})
-        self.assertRaises(ValidationError, SchemaCommand.validate, {'name': '', 'disabled': None})
+    def test_validate(self) -> None:
+        CommandData.validate(self.test_command)
+        self.assertRaises(ValidationError, CommandData.validate, {})
+        self.assertRaises(ValidationError, CommandData.validate, {'name': 0})
+        self.assertRaises(ValidationError, CommandData.validate, {'name': '', 'description': 0})
+        self.assertRaises(ValidationError, CommandData.validate, {'name': '', 'usage': 0})
+        self.assertRaises(ValidationError, CommandData.validate, {'name': '', 'permission': None})
+        self.assertRaises(ValidationError, CommandData.validate, {'name': '', 'function': ''})
+        self.assertRaises(ValidationError, CommandData.validate, {'name': '', 'overridable': None})
+        self.assertRaises(ValidationError, CommandData.validate, {'name': '', 'disabled': None})
 
 
-class TestCommandData(unittest.TestCase):
+class TestParserData(unittest.TestCase):
     def setUp(self) -> None:
-        self.test_data = CommandData({'commandPrefix': '', 'commands': []})
+        self.test_data = ParserData({'commandPrefix': '', 'commands': []})
 
-    def test_commands_json(self):
+    def test_commands_json(self) -> None:
         with (Path(__file__).parent / 'data/commands/commands.json').open(mode='r', encoding='utf8') as file:
-            CommandData.validate(json.loads(file.read()))
+            ParserData.validate(json.loads(file.read()))
 
-    def test_defaults(self):
-        self.assertRaises(TypeError, CommandData)
-        self.assertRaises(ValidationError, CommandData, {})
-        self.assertEqual(self.test_data.commandPrefix, '')
+    def test_defaults(self) -> None:
+        self.assertRaises(KeyError, ParserData)
+        self.assertRaises(KeyError, ParserData, {})
+        self.assertEqual(self.test_data.command_prefix, '')
         self.assertListEqual(self.test_data.commands, [])
 
-    def test_slots(self):
+    def test_slots(self) -> None:
         with self.assertRaises(AttributeError):
             self.test_data.non_existent = 1
 
-    def test_validate(self):
-        CommandData.validate(self.test_data)
-        self.assertRaises(ValidationError, CommandData.validate, {})
-        self.assertRaises(ValidationError, CommandData.validate, {'commands': []})
-        self.assertRaises(ValidationError, CommandData.validate, {'commandPrefix': None})
-        self.assertRaises(ValidationError, CommandData.validate, {'commandPrefix': None, 'commands': []})
-        self.assertRaises(ValidationError, CommandData.validate, {'commandPrefix': '', 'commands': None})
-        self.assertRaises(ValidationError, CommandData.validate, {'commandPrefix': '', 'commands': [0, 1, 2, 3]})
+    def test_validate(self) -> None:
+        ParserData.validate(self.test_data)
+        self.assertRaises(ValidationError, ParserData.validate, {})
+        self.assertRaises(ValidationError, ParserData.validate, {'commands': []})
+        self.assertRaises(ValidationError, ParserData.validate, {'commandPrefix': None})
+        self.assertRaises(ValidationError, ParserData.validate, {'commandPrefix': None, 'commands': []})
+        self.assertRaises(ValidationError, ParserData.validate, {'commandPrefix': '', 'commands': None})
+        self.assertRaises(ValidationError, ParserData.validate, {'commandPrefix': '', 'commands': [0, 1, 2, 3]})
 
 
 if __name__ == '__main__':
