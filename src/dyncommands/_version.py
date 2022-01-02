@@ -7,7 +7,7 @@
 # 2) We can load it in setup.cfg
 # 3) We can import it into modules
 
-__version_info__ = (1, 3, 0, 'candidate', 0)
+__version_info__ = (1, 3, 0, 'candidate', 1)
 """Major, Minor, Micro, Release level, Serial in respective order."""
 
 
@@ -17,9 +17,7 @@ def _stringify(major: int, minor: int, micro: int = 0, releaselevel: str = 'fina
     Releaselevel is the status of the given version, NOT the project itself.
     All versions of an alpha or beta should be a 'final' releaselevel.
 
-    Serial is only taken into account if releaselevel is not 'final' or 'release',
-    you may also use your own custom releaselevel strings,
-    though they will be shortened if they are longer than 3 characters.
+    Serial is only taken into account if releaselevel is not 'final' or 'release'.
 
     For developmental releases, post releases, and local release specifications, see
     https://www.python.org/dev/peps/pep-0440/
@@ -114,11 +112,11 @@ def _stringify(major: int, minor: int, micro: int = 0, releaselevel: str = 'fina
         v_number += f'{dev_sep}dev{dev if dev else ""}'
 
     if dev_post is not None:
-        sep = f'{dev_post_sep}{post_spelling}' if not post_implicit else '-'
+        sep = f'{dev_post_sep + post_spelling}' if not post_implicit else '-'
         v_number += f'{sep}{dev_post_ver_sep if dev_post else ""}{dev_post if dev_post or sep == "-" else ""}'
 
     if local is not None:
-        v_number += f'+{local}{local_ver_sep}{local_ver}'
+        v_number += f'+{local + local_ver_sep}{local_ver}'
 
     return v_number
 

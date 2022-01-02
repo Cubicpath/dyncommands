@@ -42,10 +42,11 @@ reports = "no"
 
 [tool.pylint.'FORMAT']
 good-names = [
+    "a", "b", "c",
     "e",
-    "i",
+    "i", "j", "k", "l",
     "o",
-    "x",
+    "x", "y", "z",
     "_",
     "__",
 ]

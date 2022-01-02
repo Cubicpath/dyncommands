@@ -2,28 +2,46 @@
 #                              MIT Licence (C) 2021 Cubicpath@Github                              #
 ###################################################################################################
 """Tests for the parser.py and exceptions.py modules."""
+import io
 import random
 import string
 import sys
 import unittest
 from pathlib import Path
+from shutil import copytree
+from shutil import rmtree
 
 from dyncommands import *
 from dyncommands.schema import CommandData
+from dyncommands.utils import get_raw_text
 
 # Boilerplate to allow running script directly.
 if __name__ == '__main__' and __package__ is None: sys.path.insert(1, str(Path(__file__).resolve().parent.parent)); __package__ = 'tests'
 
-parser = CommandParser(commands_path=str(Path(__file__).parent / 'data/commands'), silent=True)
-orig_prefix = parser.prefix
+temp_path = Path(__file__).parent / 'data/temp/commands'
+
+
+def make_parser_env():
+    rmtree(temp_path, ignore_errors=True)
+    copytree(temp_path.parent.parent / 'commands', temp_path)
 
 
 class TestExceptions(unittest.TestCase):
     """Tests for the exceptions module"""
+    parser: CommandParser
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        make_parser_env()
+        cls.parser = CommandParser(temp_path, silent=True)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        rmtree(temp_path)
 
     def setUp(self) -> None:
         self.test_context = CommandContext('!w')
-        self.test_command = Command(CommandData(name='w'), parser)
+        self.test_command = Command(CommandData(name='w'), self.parser)
 
     def test_CommandError(self) -> None:
         """General failure of command execution"""
@@ -36,11 +54,11 @@ class TestExceptions(unittest.TestCase):
         """Improperly use commands"""
         e = DisabledError(self.test_command, self.test_context)
         self.error_assert(e)
-        parser.set_disabled('test', True)
+        self.parser.set_disabled('test', True)
         self.assertEqual(f"'{e.command.name}' is disabled, enable to execute.", str(e))
         self.test_context = CommandContext('!test', self.test_context.source)
-        self.assertRaises(DisabledError, parser.parse, self.test_context)
-        parser.set_disabled('test', False)
+        self.assertRaises(DisabledError, self.parser.parse, self.test_context)
+        self.parser.set_disabled('test', False)
 
     def test_ImproperUsageError(self) -> None:
         """Improperly use commands"""
@@ -48,7 +66,7 @@ class TestExceptions(unittest.TestCase):
         self.error_assert(e)
         self.assertEqual(f"Incorrect usage of '{e.command.name}'. To view usage information, use '!#prefix#!help {e.command.name}'.", str(e))
         self.test_context = CommandContext('!commands a b', self.test_context.source)
-        self.assertRaises(ImproperUsageError, parser.parse, self.test_context)
+        self.assertRaises(ImproperUsageError, self.parser.parse, self.test_context)
 
     def test_NoPermissionError(self) -> None:
         """Executing command without required permissions"""
@@ -56,14 +74,14 @@ class TestExceptions(unittest.TestCase):
         self.error_assert(e)
         self.assertEqual(f"'{e.context.source.display_name}' did not have the required permissions ({e.context.source.permission}/{e.command.permission}) to use the '{e.command.name}' command.", str(e))
         self.test_context = CommandContext('!test', self.test_context.source)
-        self.assertRaises(NoPermissionError, parser.parse, self.test_context)
+        self.assertRaises(NoPermissionError, self.parser.parse, self.test_context)
 
     def test_NotFoundError(self) -> None:
         """Non-existent command name"""
         e = NotFoundError(self.test_command.name, self.test_context)
         self.error_assert(e)
         self.assertEqual(f"'w' is not a registered command.", str(e))
-        self.assertRaises(NotFoundError, parser.parse, self.test_context)
+        self.assertRaises(NotFoundError, self.parser.parse, self.test_context)
 
     def error_assert(self, e: CommandError) -> None:
         self.assertIsInstance(e, (type(e), CommandError))
@@ -75,34 +93,44 @@ class TestExceptions(unittest.TestCase):
 
 class TestCommandParser(unittest.TestCase):
     """Tests for the parser module"""
+    parser: CommandParser
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        make_parser_env()
+        cls.old_stdout = sys.stdout  # Memorize the default stdout
+        cls.parser = parser = CommandParser(temp_path, silent=True)
+        cls.original_prefix = parser.prefix
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        rmtree(temp_path)
 
     def setUp(self) -> None:
         self.test_source = CommandSource(self.feedback_receiver)
         self.feedback = ''
+        self.buffer = sys.stdout = io.StringIO()
 
     def tearDown(self) -> None:
-        parser.prefix = orig_prefix
+        sys.stdout = self.old_stdout
+        self.parser.prefix = self.original_prefix
 
-    def test_set_disabled(self) -> None:
-        self.assertFalse(parser.set_disabled('commands', True))
-        self.assertTrue(parser.set_disabled('test', True))
-        self.assertFalse(parser.commands['commands'].disabled)
-        self.assertTrue(parser.commands['test'].disabled)
-        parser.set_disabled('test', False)
+    def test_add_command(self) -> None:
+        ...
 
     def test_command_updating(self) -> None:
         broken_command_link = 'https://gist.github.com/Cubicpath/8fc611ca67bf2d17e03b4766a816596a'
-        with (parser.commands_path / 'zzz__test.py').open(mode='r', encoding='utf8') as file:
+        with (self.parser.path / 'zzz__test.py').open(mode='r', encoding='utf8') as file:
             test_command = file.read()
-        self.assertEqual(parser.add_command(text=test_command), 'test')
-        self.assertEqual(parser.add_command(text=broken_command_link, link=True), 'broken')
-        parser.reload()
-        self.assertEqual(parser.commands['test'].name, 'test')
-        self.assertEqual(parser.commands['test'].usage, 'test [*args:Any]')
-        self.assertEqual(parser.commands['test'].description, 'Test command.')
-        self.assertEqual(parser.commands['test'].permission, 500)
-        self.assertEqual(parser.commands['test'].children, {})
-        self.assertIsNone(parser.commands.get('broken'))
+        self.assertEqual(self.parser.add_command(text=test_command), 'test')
+        self.assertEqual(self.parser.add_command(text=broken_command_link, link=True), 'broken')
+        self.parser.reload()
+        self.assertEqual(self.parser.commands['test'].name, 'test')
+        self.assertEqual(self.parser.commands['test'].usage, 'test [*args:Any]')
+        self.assertEqual(self.parser.commands['test'].description, 'Test command.')
+        self.assertEqual(self.parser.commands['test'].permission, 500)
+        self.assertEqual(self.parser.commands['test'].children, {})
+        self.assertIsNone(self.parser.commands.get('broken'))
         self.assertRaises(FileNotFoundError, CommandParser, 'bad_path')
 
     def test_parse(self) -> None:
@@ -111,24 +139,71 @@ class TestCommandParser(unittest.TestCase):
             self.assert_prefix(substring_tup[0])
         self.test_source.permission = 1000
         context = CommandContext('test', self.test_source)
-        parser(context)
-        parser.parse(context)
+        self.parser(context)
+        self.parser.parse(context)
         self.assertEqual(self.feedback, f"'{context.working_string.strip()}' is correct usage of the 'test' command.")
 
+    def test_remove_command(self) -> None:
+        ...
+
+    def test_set_disabled(self) -> None:
+        self.assertFalse(self.parser.set_disabled('commands', True))
+        self.assertTrue(self.parser.set_disabled('test', True))
+        self.assertFalse(self.parser.commands['commands'].disabled)
+        self.assertTrue(self.parser.commands['test'].disabled)
+        self.parser.set_disabled('test', False)
+
+    def test_silent(self) -> None:
+        # Buffer shouldn't change
+        self.assertTrue(self.parser._silent)
+        old_output = self.buffer.getvalue()
+        self.parser.print('test')
+        self.assertEqual(old_output, self.buffer.getvalue())
+
+        # Buffer should change
+        self.parser._silent = False
+        self.assertFalse(self.parser._silent)
+        old_output = self.buffer.getvalue()
+        self.parser.print('test')
+        self.assertNotEqual(old_output, self.buffer.getvalue())
+
     def assert_prefix(self, prefix: str) -> None:
-        parser.prefix = prefix
-        context = CommandContext(parser.prefix + ''.join(random.choices(string.printable.rstrip(string.whitespace) + ' ', k=random.randint(20, 40))), self.test_source)
-        self.assertEqual(parser.prefix, prefix)
-        self.assertRaises(NotFoundError, parser.parse, context)
+        self.parser.prefix = prefix
+        context = CommandContext(self.parser.prefix + ''.join(random.choices(string.printable.rstrip(string.whitespace) + ' ', k=random.randint(20, 40))), self.test_source)
+        self.assertEqual(self.parser.prefix, prefix)
+        self.assertRaises(NotFoundError, self.parser.parse, context)
 
     def feedback_receiver(self, s: str, *_) -> None:
         self.feedback = s
 
 
 class TestUnrestricted(unittest.TestCase):
+    parser: CommandParser
+
     @classmethod
     def setUpClass(cls) -> None:
-        cls.parser = CommandParser(parser.commands_path, silent=True, unrestricted=True)
+        make_parser_env()
+        cls.parser = CommandParser(temp_path, silent=True, unrestricted=True)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        rmtree(temp_path)
+
+    def setUp(self) -> None:
+        self.test_source = CommandSource(self.feedback_receiver)
+        self.feedback = ''
+
+    def test_should_hide_attr(self):
+        self.assertFalse(self.parser._should_hide_attr('_protected_attribute', object()))
+        self.assertFalse(self.parser._should_hide_attr('path_object', temp_path))
+
+    def test_parse(self):
+        context = CommandContext('unrestricted arg1 arg2', self.test_source)
+        self.parser.parse(context)
+        self.assertEqual(self.feedback, get_raw_text('https://gist.github.com/Cubicpath/8fc611ca67bf2d17e03b4766a816596a'))
+
+    def feedback_receiver(self, s: str, *_) -> None:
+        self.feedback = s
 
 
 if __name__ == '__main__':

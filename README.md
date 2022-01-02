@@ -21,6 +21,7 @@ When parsing a string, it separates the command name from arguments, and execute
 Each time the parser is called, you can pass in your own custom kwargs that the command will have access to.
 
 All command modules are compiled through [RestrictedPython](https://github.com/zopefoundation/RestrictedPython) before being allowed to run.
+You can turn off Restricted execution by setting CommandParser._unrestricted to _true_, though this is highly discouraged when running untrusted code.
 
 How to use:
 ---------------

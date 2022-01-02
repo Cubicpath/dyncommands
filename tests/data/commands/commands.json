@@ -51,6 +51,10 @@
       "children": [],
       "overridable": true,
       "disabled": false
+    },
+    {
+      "name": "unrestricted",
+      "function": true
     }
   ]
 }

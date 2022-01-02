@@ -74,21 +74,11 @@ class Command(Node):
         """Syntax sugar for self._execute."""
         return self._execute(*args, **kwargs)
 
-    def _should_hide_attr(self, name: str, o: Any) -> bool:
-        if self._parser._unrestricted:
-            return False
-
-        # Include already proxied objects
-        return not isinstance(o, PrivateProxy) and (
-                isinstance(o, Path) or  # Exclude Path attributes
-                name.startswith('_')  # Exclude protected attributes
-        )
-
     # pylint: disable=exec-used
     def _load_function(self) -> None:
         """Loads in python code from storage for future execution."""
-        module_path: Path = self._parser.commands_path / f'zzz__{self.name}.py'
-        namespace:   dict[str, Any] = {}
+        module_path: Path = self._parser.path / f'zzz__{self.name}.py'
+        locals_:   dict[str, Any] = {}
 
         try:
             with module_path.open(mode='r', encoding='utf8') as file:
@@ -97,18 +87,22 @@ class Command(Node):
                 if not self._parser._unrestricted:
                     # Restricted
                     byte_code = safe_compile(plaintext_code, str(module_path), 'exec', policy=_CommandPolicy)
-                    exec(byte_code, command_globals, namespace)
+                    exec(byte_code, command_globals, locals_)
                 else:
                     # Unrestricted
+                    globals_ = globals().copy()
+                    globals_.update({'__file__': str(module_path)})
                     byte_code = compile(plaintext_code, str(module_path), 'exec')
-                    exec(byte_code, globals(), locals())
+                    exec(byte_code, globals_, locals_)
+
         except (FileNotFoundError, SyntaxError, NotImplementedError) as e:
             self._parser.print(str(e))
             self._parser.print(f"Discarding broken command '{self.name}' from {module_path}.")
             self._parser.remove_command(self.name)
+
         else:
             self._parser.print(f"Loading file {module_path} from disk into '{self.name}'.")
-            self._function = namespace.get('command', DUMMY_FUNC)
+            self._function = locals_.get('command', DUMMY_FUNC)
 
     def _execute(self, *args, **kwargs) -> Optional[str]:
         """Command (or last node)'s permission must be at least 0 and equal to or less than the source's permission level.
@@ -120,7 +114,7 @@ class Command(Node):
         :raises NoPermissionError: When contextual source does not have the required permissions.
         """
         context: CommandContext = kwargs['context']
-        parser: 'CommandParser' = kwargs['parser']
+        kwargs['parser'] = self._parser
         kwargs['self'] = self
 
         if not self.disabled:
@@ -128,14 +122,14 @@ class Command(Node):
             final_node: Node = self
             for arg in args:
                 final_node = final_node.children.get(arg, final_node)
-            if context.source.has_permission(final_node.permission) or parser._ignore_permission:
-                # Proxy public attributes of kwargs; exclude Path attributes
+            if context.source.has_permission(final_node.permission) or self._parser._ignore_permission:
                 if not self._parser._unrestricted:
-                    kwargs = {kwarg: PrivateProxy(kwval, self._should_hide_attr) for kwarg, kwval in kwargs.items()}
-                    try:
-                        return self._function(*args, **kwargs)
-                    except Exception as e:
-                        raise CommandError(self, context, e) from e
+                    # Proxy public attributes of kwargs; exclude Path attributes
+                    kwargs = {kwarg: PrivateProxy(kwval, self._parser._should_hide_attr) for kwarg, kwval in kwargs.items()}
+                try:
+                    return self._function(*args, **kwargs)
+                except Exception as e:
+                    raise CommandError(self, context, e) from e
 
             raise NoPermissionError(final_node, context)
         raise DisabledError(self, context)
@@ -151,16 +145,16 @@ class CommandParser:
         """
         self.commands:            CaseInsensitiveDict[Command] = CaseInsensitiveDict()
         self.command_data:        list[CommandData] = []
-        self.commands_path:       Path = Path(commands_path)
-        self.delimiting_str:      str = ' '
+        self.path:                Path = Path(commands_path)
         self._command_prefix:     str = '/'
         self._current_command:    Optional[Command] = None
+        self._delimiting_str:     str = ' '
         self._ignore_permission:  bool = ignore_permission
         self._silent:             bool = silent
         self._unrestricted:       bool = unrestricted
 
         if self._unrestricted:
-            self.print(f'WARNING. UNRESTRICTED MODE ON FOR {self.__repr__()} AT {self.commands_path}. DO NOT RUN UNTRUSTED CODE.')
+            self.print(f'WARNING. UNRESTRICTED MODE ON FOR {self.__repr__()} AT {self.path}. DO NOT RUN UNTRUSTED CODE.')
 
         self.reload()
 
@@ -176,7 +170,7 @@ class CommandParser:
     @prefix.setter
     def prefix(self, value) -> None:
         """Set the current prefix both in memory and in the commands.json file."""
-        json_path: Path = self.commands_path / 'commands.json'
+        json_path: Path = self.path / 'commands.json'
         self._command_prefix = value
         with json_path.open(mode='r', encoding='utf8') as file:
             new_json: dict[str, Any] = json.load(file)
@@ -184,11 +178,21 @@ class CommandParser:
         with json_path.open(mode='w', encoding='utf8') as file:
             json.dump(new_json, file, indent=2)
 
+    def _should_hide_attr(self, name: str, o: Any) -> bool:
+        if self._unrestricted:
+            return False
+
+        # Include already proxied objects
+        return not isinstance(o, PrivateProxy) and (
+                isinstance(o, Path) or  # Exclude Path attributes
+                name.startswith('_')  # Exclude protected attributes
+        )
+
     def reload(self) -> None:
         """Load all data from the commands.json file in the commands_path.
         For every command JSON object, a Command object is constructed and assigned with the same name.
         """
-        json_path: Path = self.commands_path / 'commands.json'
+        json_path: Path = self.path / 'commands.json'
 
         if json_path.exists():
             with json_path.open(mode='r', encoding='utf8') as file:
@@ -208,7 +212,7 @@ class CommandParser:
 
             json_data.validate(json_data)
         else:
-            raise FileNotFoundError(f'commands.json not in commands_path ({self.commands_path})')
+            raise FileNotFoundError(f'commands.json not in commands_path ({self.path})')
 
     def parse(self, context: CommandContext, **kwargs) -> None:
         """Parse a CommandContext's working_string for commands and arguments, then execute them.
@@ -225,10 +229,10 @@ class CommandParser:
 
         input_ = context.working_string.removeprefix(self.prefix).rstrip('\U000e0000').strip()
         if input_:
-            split = input_.split(self.delimiting_str)
+            split = input_.split(self._delimiting_str)
             name, args = split[0], split[1:]
             if self.commands.get(name) is not None:
-                kwargs.update({'parser': self, 'context': context})
+                kwargs.update({'context': context})
                 try:
                     # Call command function with args and kwargs
                     return_val = self.commands[name](*args, **kwargs)
@@ -259,7 +263,7 @@ class CommandParser:
         :param value: Whether disabled or not.
         :return: If disabled state successfully changed.
         """
-        json_path: Path = self.commands_path / 'commands.json'
+        json_path: Path = self.path / 'commands.json'
 
         with json_path.open(mode='r', encoding='utf8') as file:
             data: dict[str, Any] = json.load(file)
@@ -331,14 +335,14 @@ class CommandParser:
                             in_docstring = True
                         else:
                             # Single-line docstring
-                            lines_to_sub_at.add((i, second_doc + 3))
+                            lines_to_sub_at.add((i, second_doc + len(marker)))
                         finally:
                             do_continue = True
 
                     # When ending a multi-line docstring
                     elif marker in simple and in_docstring:
                         in_docstring = False
-                        lines_to_sub_at.add((i, line.index(marker) + 3))
+                        lines_to_sub_at.add((i, line.index(marker) + len(marker)))
                         do_continue = True
 
                 if do_continue:
@@ -410,8 +414,8 @@ class CommandParser:
                 'disabled': False
             }
 
-            json_path:   Path = self.commands_path / 'commands.json'
-            module_path: Path = self.commands_path / f'zzz__{new_data["name"]}.py'
+            json_path:   Path = self.path / 'commands.json'
+            module_path: Path = self.path / f'zzz__{new_data["name"]}.py'
 
             with json_path.open(mode='r', encoding='utf8') as json_file:
                 data: dict[str, Any] = json.load(json_file)
@@ -427,6 +431,7 @@ class CommandParser:
 
             with json_path.open(mode='w', encoding='utf8') as json_file, module_path.open(mode='w', encoding='utf8') as module_file:
                 json.dump(data, json_file, indent=2)
+                json_file.write('\n')
                 module_file.writelines(lines)
 
             return new_data['name']
@@ -439,8 +444,8 @@ class CommandParser:
         :param name: Name of command to remove.
         :return: {name} if successful, else empty string.
         """
-        json_path:   Path = self.commands_path / 'commands.json'
-        module_path: Path = self.commands_path / f'zzz__{name}.py'
+        json_path:   Path = self.path / 'commands.json'
+        module_path: Path = self.path / f'zzz__{name}.py'
         removed:     bool = False
 
         with json_path.open(mode='r', encoding='utf8') as file:

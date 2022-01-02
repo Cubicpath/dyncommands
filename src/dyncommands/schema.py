@@ -5,6 +5,7 @@
 import json
 from pathlib import Path
 from typing import Any
+from typing import Final
 from typing import Optional
 
 from jsonschema import Draft7Validator
@@ -15,19 +16,17 @@ __all__ = (
     'SCHEMA'
 )
 
-SCHEMA: dict[str, Any]
-
-with (Path(__file__).parent / 'schemas/commands.schema.json').open(mode='r', encoding='utf8') as schema:
-    SCHEMA = json.loads(schema.read())
+with (Path(__file__).parent / 'schemas/commands.schema.json').open(mode='r', encoding='utf8') as _schema:
+    SCHEMA: Final[dict[str, Any]] = json.loads(_schema.read())
     Draft7Validator.check_schema(SCHEMA)
-    del schema
+    del _schema
 
 
 class CommandData(dict):
     """Python mapping to command.schema.json files."""
     __slots__ = ('children', 'description', 'disabled', 'function', 'name', 'overridable', 'permission', 'usage')
-    SCHEMA: dict[str, Any] = SCHEMA['definitions']['command']
-    Validator: Draft7Validator = Draft7Validator(SCHEMA)
+    _SCHEMA:    Final[dict[str, Any]] = SCHEMA['definitions']['command']
+    _VALIDATOR: Final[Draft7Validator] = Draft7Validator(_SCHEMA)
 
     def __init__(self, seq=None, **kwargs) -> None:
         super().__init__(seq if seq is not None else {}, **kwargs)
@@ -51,19 +50,19 @@ class CommandData(dict):
 
         :param data: JSON data.
         """
-        cls.Validator.validate(data)
+        cls._VALIDATOR.validate(data)
 
 
 class ParserData(dict):
     """Python mapping to commands.schema.json files."""
     __slots__ = ('commands', 'command_prefix')
-    SCHEMA = SCHEMA
-    Validator = Draft7Validator(SCHEMA)
+    _SCHEMA:    Final[dict[str, Any]] = SCHEMA
+    _VALIDATOR: Final[Draft7Validator] = Draft7Validator(_SCHEMA)
 
     def __init__(self, seq=None, **kwargs) -> None:
         super().__init__(seq if seq is not None else {}, **kwargs)
-        self['commands'] = [CommandData(command) for command in self['commands']]
-        self.commands:      list[CommandData] = kwargs.pop('commands', self['commands'])
+        self['commands'] = kwargs.pop('commands', [CommandData(command) for command in self['commands']])
+        self.commands:       list[CommandData] = self['commands']
         self.command_prefix: str = kwargs.pop('commandPrefix', self['commandPrefix'])
 
     @classmethod
@@ -72,4 +71,4 @@ class ParserData(dict):
 
         :param data: JSON data.
         """
-        cls.Validator.validate(data)
+        cls._VALIDATOR.validate(data)
