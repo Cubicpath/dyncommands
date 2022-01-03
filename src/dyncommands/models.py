@@ -1,7 +1,7 @@
 ###################################################################################################
 #                              MIT Licence (C) 2021 Cubicpath@Github                              #
 ###################################################################################################
-"""Simple object models that are easily extendable and used during parsing."""
+"""Simple object models that are easily extensible and used during parsing."""
 from collections.abc import Callable
 from typing import Any
 from typing import Optional
@@ -28,6 +28,7 @@ class Node:
         """Initialize and load any kwargs as attributes.
 
         Supported kwargs are:
+
         :keyword parent: (Node).
         :keyword name: (str) Uniquely identifies this node to its parent.
         :keyword usage: (str) Metadata.
@@ -69,6 +70,7 @@ class Node:
     @name.setter
     def name(self, value: str) -> None:
         """Set this :py:class:`Node`'s name to value and update self in parent's children.
+
         :param value: Node or None to set as parent.
         """
         if self._parent is not None:
@@ -84,6 +86,7 @@ class Node:
     @parent.setter
     def parent(self, value: Optional['Node']) -> None:
         """Set this :py:class:`Node`'s parent to value and remove self from old parent's children.
+
         :param value: Node or None to set as parent.
         """
         if self._parent is not None:
@@ -101,6 +104,7 @@ class Node:
 
     def remove_children(self, *children: Union[str, 'Node']) -> None:
         """Remove children from self.children and set their parent as None.
+
         :param children: Either name of node or a Node object to search through self for.
         """
         for child in children:
@@ -127,6 +131,7 @@ class CommandSource:
 
     def send_feedback(self, text: str, *args, **kwargs) -> None:
         """Send text, along with any other args and kwargs, to the callback defined during object initialization.
+
         :param text: text sent through to callback.
         :param args: args to pass to callback.
         :param kwargs: kwargs to pass to callback.
@@ -135,6 +140,7 @@ class CommandSource:
 
     def has_permission(self, perm_lvl: int) -> bool:
         """Predicate of if the source can execute a command of a certain permission level.
+
         :param perm_lvl: Permission level to test
         :return: If {perm_lvl} is at least 0 and not more than self.permission.
         """

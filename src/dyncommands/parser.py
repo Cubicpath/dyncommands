@@ -141,8 +141,10 @@ class CommandParser:
 
     def __init__(self, commands_path: Union[str, Path], silent: bool = False, ignore_permission: bool = False, unrestricted: bool = False) -> None:
         """Create a new Parser and load all command data from the given path.
+
         :param silent: If true, stops all debug printing.
         :param ignore_permission: If true, permission level is not taken into account when executing a command.
+        :param unrestricted: If true, disables RestrictedPython compilation of command modules.
         """
         self.commands:            CaseInsensitiveDict[Command] = CaseInsensitiveDict()
         self.command_data:        list[CommandData] = []
@@ -192,6 +194,8 @@ class CommandParser:
     def reload(self) -> None:
         """Load all data from the commands.json file in the commands_path.
         For every :py:class:`CommandData` object in the :py:class:`ParserData`, a :py:class:`Command` object is constructed and assigned with the same name.
+
+        :raises FileNotFoundError: If parser cannot find the commands.json file
         """
         json_path: Path = self.path / 'commands.json'
 
