@@ -23,7 +23,7 @@ with (Path(__file__).parent / 'schemas/commands.schema.json').open(mode='r', enc
 
 
 class CommandData(dict):
-    """Python mapping to command.schema.json files."""
+    """Python mapping to command.schema.json objects."""
     __slots__ = ('children', 'description', 'disabled', 'function', 'name', 'overridable', 'permission', 'usage')
     _SCHEMA:    Final[dict[str, Any]] = SCHEMA['definitions']['command']
     _VALIDATOR: Final[Draft7Validator] = Draft7Validator(_SCHEMA)
@@ -54,7 +54,7 @@ class CommandData(dict):
 
 
 class ParserData(dict):
-    """Python mapping to commands.schema.json files."""
+    """Python mapping to commands.schema.json objects."""
     __slots__ = ('commands', 'command_prefix')
     _SCHEMA:    Final[dict[str, Any]] = SCHEMA
     _VALIDATOR: Final[Draft7Validator] = Draft7Validator(_SCHEMA)

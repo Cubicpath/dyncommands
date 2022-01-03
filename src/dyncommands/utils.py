@@ -51,6 +51,7 @@ class PrivateProxy:
 
 def get_raw_text(link: str) -> str:
     """Modifies url of common links to get the raw version.
+
     :param link: Original link to get text from.
     :return: raw text from link.
     """
@@ -70,13 +71,14 @@ def get_raw_text(link: str) -> str:
 
 # https://stackoverflow.com/questions/919056/case-insensitive-replace#answer-4773614
 def ireplace(text: str, old_: str, new_: str, count_: SupportsIndex = -1) -> str:
-    """Case-insensitive str.replace alternative.
+    """Case-insensitive :py:meth:`str.replace` alternative.
+
     :param text: String to search through.
     :param old_: Case-insensitive substring to look for.
     :param new_: Case-sensitive substring to replace with.
     :param count_: Maximum number of occurrences to replace. -1 (the default value) means replace all occurrences.
 
-    :return: A string with all substrings matching __old replaced with __new.
+    :return: A string with all substrings matching old_ replaced with new_.
     """
     index = 0
     if not old_:

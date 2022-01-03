@@ -7,12 +7,12 @@
 # 2) We can load it in setup.cfg
 # 3) We can import it into modules
 
-__version_info__ = (1, 3, 0, 'candidate', 1)
+__version_info__ = (1, 3, 0, 'candidate', 2)
 """Major, Minor, Micro, Release level, Serial in respective order."""
 
 
 def _stringify(major: int, minor: int, micro: int = 0, releaselevel: str = 'final', serial: int = 0, **kwargs) -> str:
-    """Stringifies a version number based on version info given. Follows PEP 440 logic.
+    """Stringifies a version number based on version info given. Follows :pep:`440`.
 
     Releaselevel is the status of the given version, NOT the project itself.
     All versions of an alpha or beta should be a 'final' releaselevel.
@@ -20,16 +20,16 @@ def _stringify(major: int, minor: int, micro: int = 0, releaselevel: str = 'fina
     Serial is only taken into account if releaselevel is not 'final' or 'release'.
 
     For developmental releases, post releases, and local release specifications, see
-    https://www.python.org/dev/peps/pep-0440/
+    https://www.python.org/dev/peps/pep-0440/#normalization
 
-    Ex: (2021, 9) -> 2021.9
-    Ex: (0, 3, 2, 'beta') -> 0.3.2b
-    Ex: (1, 0, 0, 'release') -> 1.0
-    Ex: (3, 10, 0, 'candidate', 0) -> 3.10rc
-    Ex: (3, 9, 1, 'alpha', 3) -> 3.9.2a3
-    Ex: (3, 9, 1, dev=2) -> 3.9.2.dev2
-    Ex: (3, 9, 2, 'preview', 3, post=0, post_implicit=True, dev=5) -> 3.9.2pre3-0.dev5
-    Ex: (1, 0, local='ubuntu', local_ver='2', local_ver_sep='-') -> 1.0+ubuntu-2
+    | Ex: (2021, 9) -> 2021.9
+    | Ex: (0, 3, 2, 'beta') -> 0.3.2b
+    | Ex: (1, 0, 0, 'release') -> 1.0
+    | Ex: (3, 10, 0, 'candidate', 0) -> 3.10rc
+    | Ex: (3, 9, 1, 'alpha', 3) -> 3.9.2a3
+    | Ex: (3, 9, 1, dev=2) -> 3.9.2.dev2
+    | Ex: (3, 9, 2, 'preview', 3, post=0, post_implicit=True, dev=5) -> 3.9.2pre3-0.dev5
+    | Ex: (1, 0, local='ubuntu', local_ver='2', local_ver_sep='-') -> 1.0+ubuntu-2
 
     :param major: First and most important version number.
     :param minor: Second and less important version number.

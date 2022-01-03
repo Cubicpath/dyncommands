@@ -51,11 +51,11 @@ class _CommandPolicy(RestrictingNodeTransformer):
 
 # noinspection PyProtectedMember
 class Command(Node):
-    """Dynamic command object. Created on demand by a CommandParser."""
+    """Dynamic command object. Created on demand by a :py:class:`CommandParser`."""
     __slots__ = ('_function', '_parser')
 
     def __init__(self, data: Optional[CommandData], parser: 'CommandParser') -> None:
-        """Build command from parser data and matching zzz__ modules."""
+        """Build :py:class:`Command` from :py:class:`ParserData` and matching zzz__ modules."""
         super().__init__()
         self._function = DUMMY_FUNC
         self._parser = parser
@@ -71,7 +71,7 @@ class Command(Node):
                 self._load_function()
 
     def __call__(self, *args, **kwargs) -> Optional[str]:
-        """Syntax sugar for self._execute."""
+        """Syntax sugar for :py:method:`~Command._execute`."""
         return self._execute(*args, **kwargs)
 
     # pylint: disable=exec-used
@@ -105,7 +105,8 @@ class Command(Node):
             self._function = locals_.get('command', DUMMY_FUNC)
 
     def _execute(self, *args, **kwargs) -> Optional[str]:
-        """Command (or last node)'s permission must be at least 0 and equal to or less than the source's permission level.
+        """:py:class:`Command` (or last :py:class:`Node`)'s permission must be at least 0 and equal to or less than
+        the :py:class:`CommandSource`'s permission level.
 
         Note: an argument with a permission property set to 0 will always run, regardless of the base command's permissions.
 
@@ -190,7 +191,7 @@ class CommandParser:
 
     def reload(self) -> None:
         """Load all data from the commands.json file in the commands_path.
-        For every command JSON object, a Command object is constructed and assigned with the same name.
+        For every :py:class:`CommandData` object in the :py:class:`ParserData`, a :py:class:`Command` object is constructed and assigned with the same name.
         """
         json_path: Path = self.path / 'commands.json'
 
@@ -215,7 +216,7 @@ class CommandParser:
             raise FileNotFoundError(f'commands.json not in commands_path ({self.path})')
 
     def parse(self, context: CommandContext, **kwargs) -> None:
-        """Parse a CommandContext's working_string for commands and arguments, then execute them.
+        """Parse a :py:class:`CommandContext`'s working_string for commands and arguments, then execute them.
 
         It is EXTREMELY recommended wrapping this function in a try-except block.
 
@@ -257,7 +258,7 @@ class CommandParser:
             print(*values, sep=sep, end=end, file=file, flush=flush)
 
     def set_disabled(self, command_name: str, value: bool) -> bool:
-        """Set a command as disabled.
+        """Set a :py:class:`Command` as disabled.
 
         :param command_name: Command to disable.
         :param value: Whether disabled or not.
@@ -283,15 +284,15 @@ class CommandParser:
         return True
 
     def add_command(self, text: str, link: bool = False, **kwargs) -> str:
-        """Adds a command using data read from {text}. Command metadata must either be passed in through a kwarg,
-        or structured as an inline python comment above the command function. Ex:
+        """Adds a :py:class:`Command` using data read from {text}. Command metadata must either be passed in through a kwarg,
+        or structured as an inline python comment above the command function. Ex::
 
-        # Name: do-nothing
-        # Usage: do-nothing [amount:integer sides:integer]
-        # Description: Rolls die.
-        # Permission: 0
-        def command(*args, **kwargs):
-            pass
+            # Name: do-nothing
+            # Usage: do-nothing [amount:integer sides:integer]
+            # Description: Rolls die.
+            # Permission: 0
+            def command(*args, **kwargs):
+                pass
 
         :param text: Body of text or a link to read command data from.
         :param link: Whether {text} is a link.
@@ -439,7 +440,7 @@ class CommandParser:
         return ''
 
     def remove_command(self, name: str) -> str:
-        """Remove a command from commands.json and remove the associated python module.
+        """Remove a :py:class:`CommandData` from commands.json and remove the associated python module.
 
         :param name: Name of command to remove.
         :return: {name} if successful, else empty string.

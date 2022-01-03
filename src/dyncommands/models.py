@@ -21,7 +21,7 @@ __all__ = (
 
 
 class Node:
-    """Common object that stores metadata and child nodes."""
+    """Common object that stores metadata and child :py:class:`Node` s."""
     __slots__ = ('_parent', '_name', 'usage', 'description', 'permission', 'children', 'disabled')
 
     def __init__(self, **kwargs) -> None:
@@ -68,7 +68,7 @@ class Node:
 
     @name.setter
     def name(self, value: str) -> None:
-        """Set this Node's name to value and update self in parent's children.
+        """Set this :py:class:`Node`'s name to value and update self in parent's children.
         :param value: Node or None to set as parent.
         """
         if self._parent is not None:
@@ -83,7 +83,7 @@ class Node:
 
     @parent.setter
     def parent(self, value: Optional['Node']) -> None:
-        """Set this Node's parent to value and remove self from old parent's children.
+        """Set this :py:class:`Node`'s parent to value and remove self from old parent's children.
         :param value: Node or None to set as parent.
         """
         if self._parent is not None:
@@ -142,7 +142,7 @@ class CommandSource:
 
 
 class CommandContext:
-    """Full context for parsing and executing a command from a source."""
+    """Full context for parsing and executing a command from a :py:class:`CommandSource`."""
     __slots__ = ('_source', '_working_string')
 
     def __init__(self, working_string: str = '', source: CommandSource = CommandSource()) -> None:

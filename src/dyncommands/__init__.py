@@ -5,33 +5,32 @@
 
 ----------
 
-Dynamically-loaded commands are denoted by filename with a prefix of "zzz__". Inside a python command file,
-there is a function defined as "command". This function will be mapped to a dyncommands.parser.Command's function attribute
-and stored in memory for execution. The function has access to any args that were parsed, as well as kwargs:
+Dynamically-loaded commands are denoted by filename with a prefix of "zzz__". Inside a command module,
+there is a function defined as "command". This function will be mapped to a :py:attr:`Command.function` attribute
+to be stored in memory for execution. The function has access to any args that were parsed, as well as kwargs:
 
--1. 'self' (Command), which houses the metadata for the command that's being executed.
+* 'self' (:py:class:`Command`), which houses the metadata for the command that's being executed.
 
--2. 'parser' (CommandParser), which stores the list of registered commands and command data.
+* 'parser' (:py:class:`CommandParser`), which stores the list of registered :py:class:`Command`s and :py:class:`CommandData`.
 
--3. 'context' (CommandContext), which supplies the CommandSource and the original text sent for parsing.
+* 'context' (:py:class:`CommandContext`), which supplies the :py:class:`CommandSource` and the original text sent for parsing.
 
--X. Any custom kwargs passed to CommandParser.parse.
-
-----------
-
-Commands are compiled through RestrictedPython before execution, and are therefor heavily limited in namespace.
-Modules included in globals() are: math, random, and string. Use getitem instead of subscripts, and ImproperUsageError for
-all manually-triggered command errors.
+* Any custom kwargs passed to :py:class:`CommandParser`.parse().
 
 ----------
 
-Example function that takes in 2 arguments and uses them to roll dice and sends the output of the roll to the source:
+Command modules are compiled through :py:mod:`RestrictedPython` before execution, and are therefor heavily limited in namespace.
+Modules included in :py:func:`globals` are: :py:mod:`math`, :py:mod:`random`, and :py:mod:`string`.
+Use :py:func:`operator.getitem` instead of subscripts, and :py:exc:`ImproperUsageError` for all manually-triggered command errors.
 
-https://gist.github.com/Cubicpath/8cafed94908b74b370ecd3960fbca3b0
+----------
+
+`Example function <https://gist.github.com/Cubicpath/8cafed94908b74b370ecd3960fbca3b0>`_ that takes in 2 arguments and
+them to roll dice and sends the output of the roll to the source.
 
 """
-
-from ._version import __version__, __version_info__
+from ._version import __version__
+from ._version import __version_info__
 from .exceptions import *
 from .models import *
 from .parser import *
