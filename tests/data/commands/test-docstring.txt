@@ -1,0 +1,23 @@
+###################################################################################################
+#                              MIT Licence (C) 2021 Cubicpath@Github                              #
+###################################################################################################
+# noinspection PyUnresolvedReferences
+# Name: test-docstring
+"""Single line docstring""" bad code
+""" Multi
+Line
+Docstring"""
+'''Single Line docstring'''; remove me
+
+''' Multi
+Line
+Docstring'''; remove me
+
+remove me
+
+def command(*args, **kwargs):
+    return 1 + 1
+
+remove me
+
+"""After command"""

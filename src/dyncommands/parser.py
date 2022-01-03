@@ -361,8 +361,8 @@ class CommandParser:
                         func_line = i
                         continue
 
-                    # Remove all non-comment lines above function definition
-                    if not simple.startswith('#'):
+                    # Remove all non-comment/empty lines above function definition
+                    if simple and not simple.startswith('#'):
                         lines_to_remove.add(i)
                         continue
 
@@ -380,7 +380,7 @@ class CommandParser:
                             try:
                                 # Get string value and cast to type of default value
                                 command_data[x] = type(default)(get_data(uncommented, var))
-                            except TypeError:
+                            except (TypeError, ValueError):
                                 pass
                             break
 
@@ -393,7 +393,7 @@ class CommandParser:
         if func_name:
             for i in lines_to_remove:
                 # Mark lines for removal with a NULL char
-                lines.insert(i, lines.pop(i) + '\0')
+                lines.insert(i, lines.pop(i).replace('\n', '\0\n'))
 
             for tup in lines_to_sub_at:
                 # Substring all marked lines from start to specified index

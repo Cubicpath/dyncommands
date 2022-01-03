@@ -2,6 +2,9 @@
 #                              MIT Licence (C) 2021 Cubicpath@Github                              #
 ###################################################################################################
 # noinspection PyUnresolvedReferences
+# Name: commands
+# Children: [{"name": "good", "permission": 0}, {"name": "bad", "permission": Bad-Value}]
+
 def command(*args, **kwargs):
     self, parser, context = (
         kwargs.pop('self'),

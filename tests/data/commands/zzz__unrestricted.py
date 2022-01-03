@@ -5,8 +5,6 @@
 # Name: unrestricted
 from pathlib import Path
 
-import requests
-
 from dyncommands.utils import get_raw_text
 
 

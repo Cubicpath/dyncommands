@@ -116,20 +116,30 @@ class TestCommandParser(unittest.TestCase):
         self.parser.prefix = self.original_prefix
 
     def test_add_command(self) -> None:
-        ...
-
-    def test_command_updating(self) -> None:
         broken_command_link = 'https://gist.github.com/Cubicpath/8fc611ca67bf2d17e03b4766a816596a'
+        with (self.parser.path / 'zzz__commands.py').open(mode='r', encoding='utf8') as file:
+            command0 = file.read()
         with (self.parser.path / 'zzz__test.py').open(mode='r', encoding='utf8') as file:
-            test_command = file.read()
-        self.assertEqual(self.parser.add_command(text=test_command), 'test')
+            command1 = file.read()
+        with (self.parser.path / 'test-no-command.txt').open(mode='r', encoding='utf8') as file:
+            command2 = file.read()
+        with (self.parser.path / 'test-docstring.txt').open(mode='r', encoding='utf8') as file:
+            command3 = file.read()
+        with (self.parser.path / 'test-metadata-error.txt').open(mode='r', encoding='utf8') as file:
+            command4 = file.read()
+        self.assertEqual(self.parser.add_command(text=command0), '')
+        self.assertEqual(self.parser.add_command(text=command1), 'test')
         self.assertEqual(self.parser.add_command(text=broken_command_link, link=True), 'broken')
+        self.assertEqual(self.parser.add_command(text=command2), '')
+        self.assertEqual(self.parser.add_command(text=command3), 'test-docstring')
+        self.assertEqual(self.parser.add_command(text=command4), 'test-metadata-error')
         self.parser.reload()
         self.assertEqual(self.parser.commands['test'].name, 'test')
         self.assertEqual(self.parser.commands['test'].usage, 'test [*args:Any]')
         self.assertEqual(self.parser.commands['test'].description, 'Test command.')
         self.assertEqual(self.parser.commands['test'].permission, 500)
         self.assertEqual(self.parser.commands['test'].children, {})
+        self.assertEqual(self.parser.commands['test-metadata-error'].permission, 0)
         self.assertIsNone(self.parser.commands.get('broken'))
         self.assertRaises(FileNotFoundError, CommandParser, 'bad_path')
 
@@ -144,7 +154,15 @@ class TestCommandParser(unittest.TestCase):
         self.assertEqual(self.feedback, f"'{context.working_string.strip()}' is correct usage of the 'test' command.")
 
     def test_remove_command(self) -> None:
-        ...
+        # Test overridable as false
+        self.assertEqual(self.parser.remove_command('commands'), '')
+        self.parser.reload()
+        self.assertIn('commands', self.parser.commands)
+
+        # Test function as false
+        self.assertEqual(self.parser.remove_command('test-no-function'), 'test-no-function')
+        self.parser.reload()
+        self.assertNotIn('test-no-function', self.parser.commands)
 
     def test_set_disabled(self) -> None:
         self.assertFalse(self.parser.set_disabled('commands', True))

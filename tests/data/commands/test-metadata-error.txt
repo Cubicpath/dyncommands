@@ -1,0 +1,9 @@
+###################################################################################################
+#                              MIT Licence (C) 2021 Cubicpath@Github                              #
+###################################################################################################
+# noinspection PyUnresolvedReferences
+# Name: test-metadata-error
+# Permission: Bad-Value
+
+def command(*args, **kwargs):
+    return 1 + 1
