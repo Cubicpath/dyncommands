@@ -15,7 +15,7 @@ __all__ = (
     'DUMMY_FUNC'
 )
 
-DUMMY_FUNC = lambda *args, **kwargs: None
+DUMMY_FUNC: Callable[[...], None] = lambda *args, **kwargs: None
 
 
 class PrivateProxy:
@@ -26,7 +26,7 @@ class PrivateProxy:
                  exclude_predicate: Callable[[str, Any], bool] = lambda attr, attr_val: False,
                  include_predicate: Callable[[str, Any], bool] = lambda attr, attr_val: False,
                  starting_underscore_private: bool = True,
-                 eval_for_attribute_values: bool = True):
+                 eval_for_attribute_values:   bool = True):
         """Object that proxies another object, created to prevent methods from accessing private data.
 
         All attributes starting with _ are by default considered private and are not proxied through.
@@ -40,8 +40,8 @@ class PrivateProxy:
 
         for attr in dir(o):
             # Allow use of eval to ensure compatibility with objects using __slots__ as they do not have a __dict__ and attributes must be evaluated
-            attr_val: Any = eval(f'o.{attr}', {'o': o}) if eval_for_attribute_values else vars(o).get(attr)
-            is_private = exclude_predicate(attr, attr_val) or (attr.startswith('_') and starting_underscore_private)
+            attr_val:   Any = eval(f'o.{attr}', {'o': o}) if eval_for_attribute_values else vars(o).get(attr)
+            is_private: bool = exclude_predicate(attr, attr_val) or (attr.startswith('_') and starting_underscore_private)
             if is_private and include_predicate(attr, attr_val) is False:
                 # Don't proxy attr
                 continue
@@ -55,18 +55,18 @@ def get_raw_text(link: str) -> str:
     :param link: Original link to get text from.
     :return: raw text from link.
     """
-    headers = {'Accept': 'text'}
+    headers: dict[str, str] = {'Accept': 'text'}
+    sites: tuple[str, ...] = ('gist.github.com', 'rentry.co', 'pastebin.com', 'pastes.io', 'hastebin.com')
     if not link.startswith('https://'):
         link = 'https://' + link.split('://', 1)[-1]
     if 'raw' not in link:
-        if 'gist.github.com' in link or 'rentry.co' in link:
+        if True in (site in link for site in sites[:2]):
             link += '/raw'
-        elif 'pastebin.com' in link or 'hastebin.com' in link:
-            new = link.removeprefix('https://').split('/')
-            new.insert(1, 'raw')
-            link = 'https://' + '/'.join(new)
-    text = requests.get(link, headers=headers).text
-    return text
+        elif True in (site in link for site in sites[2:]):
+            parts: list[str] = link.removeprefix('https://').split('/')
+            parts.insert(1, 'raw')
+            link = 'https://' + '/'.join(parts)
+    return requests.get(link, headers=headers).text
 
 
 # https://stackoverflow.com/questions/919056/case-insensitive-replace#answer-4773614
@@ -80,7 +80,7 @@ def ireplace(text: str, old_: str, new_: str, count_: SupportsIndex = -1) -> str
 
     :return: A string with all substrings matching old_ replaced with new_.
     """
-    index = 0
+    index: int = 0
     if not old_:
         return text.replace('', new_)
     if text.lower() == old_.lower() and count_.__index__() != 0:

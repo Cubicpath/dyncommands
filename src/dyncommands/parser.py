@@ -4,6 +4,7 @@
 """Main command parser module for Dynamic Commands."""
 import json
 import operator
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 from typing import Optional
@@ -57,8 +58,8 @@ class Command(Node):
     def __init__(self, data: Optional[CommandData], parser: 'CommandParser') -> None:
         """Build :py:class:`Command` from :py:class:`ParserData` and matching zzz__ modules."""
         super().__init__()
-        self._function = DUMMY_FUNC
-        self._parser = parser
+        self._function: Callable = DUMMY_FUNC
+        self._parser:   CommandParser = parser
         if data is not None:
             self.name = data.name
             self.usage = data.usage
@@ -78,7 +79,7 @@ class Command(Node):
     def _load_function(self) -> None:
         """Loads in python code from storage for future execution."""
         module_path: Path = self._parser.path / f'zzz__{self.name}.py'
-        locals_:   dict[str, Any] = {}
+        locals_:     dict[str, Any] = {}
 
         try:
             with module_path.open(mode='r', encoding='utf8') as file:
@@ -118,11 +119,12 @@ class Command(Node):
         kwargs['parser'] = self._parser
         kwargs['self'] = self
 
-        if not self.disabled:
+        final_node: Node = self
+        for arg in args:
+            final_node = final_node.children.get(arg, final_node)
+
+        if not self.disabled and not final_node.disabled:
             # Get permission level of last argument with properties, or the command itself if no args with properties
-            final_node: Node = self
-            for arg in args:
-                final_node = final_node.children.get(arg, final_node)
             if context.source.has_permission(final_node.permission) or self._parser._ignore_permission:
                 if not self._parser._unrestricted:
                     # Proxy public attributes of kwargs; exclude Path attributes
@@ -232,9 +234,9 @@ class CommandParser:
         :raises NotFoundError: When command specified in the contextual working string is not found in the command data.
         """
 
-        input_ = context.working_string.removeprefix(self.prefix).rstrip('\U000e0000').strip()
+        input_: str = context.working_string.removeprefix(self.prefix).rstrip('\U000e0000').strip()
         if input_:
-            split = input_.split(self._delimiting_str)
+            split: list[str] = input_.split(self._delimiting_str)
             name, args = split[0], split[1:]
             if self.commands.get(name) is not None:
                 kwargs.update({'context': context})
@@ -248,7 +250,7 @@ class CommandParser:
                     self.print(e.parent.__class__.__name__ + " while executing command: " + str(e.parent))
                     if isinstance(e.parent, ImproperUsageError):
                         # Negative feedback
-                        message = str(e.parent)
+                        message: str = str(e.parent)
                         if message:
                             context.source.send_feedback(message.replace('!#prefix#!', self.prefix), context.source.display_name)
                     if isinstance(e.parent, CommandError):
@@ -271,7 +273,7 @@ class CommandParser:
         json_path: Path = self.path / 'commands.json'
 
         with json_path.open(mode='r', encoding='utf8') as file:
-            data: dict[str, Any] = json.load(file)
+            data:     dict[str, Any] = json.load(file)
             commands: dict[str, dict] = {command['name']: command for command in data.get('commands')}
 
             if commands.get(command_name, {}).get('overridable') is not False:
@@ -323,8 +325,8 @@ class CommandParser:
         doc_markers:     tuple[str, str] = ('"""', "'''")
 
         for i, line in enumerate(lines):
-            simple = line.replace(' ', '').replace('\t', '').strip().lower()
-            uncommented = line.strip().removeprefix('#')
+            simple:      str = line.replace(' ', '').replace('\t', '').strip().lower()
+            uncommented: str = line.strip().removeprefix('#')
 
             # If ''' or """ in line
             if True in (marker in line for marker in doc_markers):
@@ -379,7 +381,7 @@ class CommandParser:
                         continue
 
                     for x, var in enumerate(('name', 'usage', 'description', 'permission')):
-                        default = command_data[x]
+                        default: Any = command_data[x]
                         if simple.startswith(f'#{var}') and not default:
                             try:
                                 # Get string value and cast to type of default value
@@ -408,7 +410,7 @@ class CommandParser:
             # Replace function name with generic name 'command'
             lines.insert(func_line, lines.pop(func_line).strip().replace(f'def {func_name}', 'def command', 1) + '\n')
 
-            new_data = {
+            new_data: dict[str, Any] = {
                 'name': command_data[0],
                 'usage': command_data[1],
                 'description': command_data[2],
@@ -425,7 +427,7 @@ class CommandParser:
             with json_path.open(mode='r', encoding='utf8') as json_file:
                 data: dict[str, Any] = json.load(json_file)
 
-            commands = {command['name']: command for command in data.get('commands')}
+            commands: dict[str, dict[str, Any]] = {command['name']: command for command in data.get('commands')}
 
             if commands.get(new_data['name'], {}).get('overridable') is not False:
                 commands.update({new_data['name']: new_data})
@@ -456,7 +458,7 @@ class CommandParser:
         with json_path.open(mode='r', encoding='utf8') as file:
             data: dict[str, Any] = json.load(file)
 
-        commands = {command['name']: command for command in data.get('commands')}
+        commands: dict[str, dict[str, Any]] = {command['name']: command for command in data.get('commands')}
 
         if commands.get(name, {}).get('overridable') is not False:
             if commands.pop(name, None) is not None:

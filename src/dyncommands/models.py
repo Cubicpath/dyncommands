@@ -122,8 +122,8 @@ class CommandSource:
     __slots__ = ('display_name', 'permission', '_feedback_callback')
 
     def __init__(self, feedback_callback: Callable[[str, ...], None] = DUMMY_FUNC) -> None:
-        self.display_name = ''
-        self.permission = 0
+        self.display_name: str = ''
+        self.permission:   int = 0
         self._feedback_callback = feedback_callback
 
     def __str__(self) -> str:
@@ -152,15 +152,15 @@ class CommandContext:
     __slots__ = ('_source', '_working_string')
 
     def __init__(self, working_string: str = '', source: CommandSource = CommandSource()) -> None:
-        self._source = source
-        self._working_string = working_string
-
-    @property
-    def working_string(self) -> str:
-        """Original string sent for parsing."""
-        return self._working_string
+        self._source:         CommandSource = source
+        self._working_string: str = working_string
 
     @property
     def source(self) -> CommandSource:
         """Source that initialized the parse."""
         return self._source
+
+    @property
+    def working_string(self) -> str:
+        """Original string sent for parsing."""
+        return self._working_string

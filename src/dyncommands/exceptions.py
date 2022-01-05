@@ -20,7 +20,7 @@ class CommandError(Exception):
     def __init__(self, command: Optional[Node], context: CommandContext, parent: Exception = None, message: str = None) -> None:
         self.command: Optional[Node] = command
         self.context: CommandContext = context
-        self.parent = parent
+        self.parent:  Exception = parent
         name = command.name if command else 'Unknown'
         super().__init__(f"'{context.source.display_name}' failed executing the '{name}' command." if message is None else message)
 
