@@ -12,7 +12,7 @@ from shutil import copytree
 from shutil import rmtree
 
 from dyncommands import *
-from dyncommands.schema import CommandData
+from dyncommands.schemas import CommandData
 from dyncommands.utils import get_raw_text
 
 # Boilerplate to allow running script directly.

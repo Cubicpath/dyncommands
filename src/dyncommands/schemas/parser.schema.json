@@ -1,5 +1,5 @@
 {
-  "$id": "https://raw.githubusercontent.com/Cubicpath/dyncommands/master/src/dyncommands/schemas/commands.schema.json#",
+  "$id": "https://raw.githubusercontent.com/Cubicpath/dyncommands/master/src/dyncommands/schemas/parser.schema.json#",
   "$schema": "https://json-schema.org/draft-07/schema#",
   "title": "CommandParser storage",
   "description": "https://github.com/Cubicpath/dyncommands/blob/master/README.md#command-metadata",

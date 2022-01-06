@@ -23,7 +23,7 @@ from RestrictedPython.Guards import safer_getattr
 
 from .exceptions import *
 from .models import *
-from .schema import *
+from .schemas import *
 from .utils import *
 
 __all__ = (

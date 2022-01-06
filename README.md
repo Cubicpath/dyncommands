@@ -55,14 +55,14 @@ This is where all the data for the parser is loaded and stored.
 
 All `commands.json` files are validated with [JSON Schemas][json-schema] through the [jsonschema][PyPIjsonschema] python package
 
-#### commands.json [Draft-07] JSON Schema
+#### commands.json [Draft-07] JSON Schema | [raw][schema-command]
 
 | key             | type                 | description                                                                             | default  | required |
 |-----------------|----------------------|-----------------------------------------------------------------------------------------|----------|----------|
 | `commandPrefix` | _string_             | Strings must start with this prefix, otherwise it is ignored. Empty string accepts all. | **N/A**  | **Yes**  |
 | `commands`      | _array_[**Command**] | Contains metadata for the stored command modules.                                       | **N/A**  | **Yes**  |
 
-#### Command object [Draft-07] JSON Schema
+#### Command object [Draft-07] JSON Schema | [raw][schema-parser]
 
 | key           | type                 | description                                                                                       | default  | required |
 |---------------|----------------------|---------------------------------------------------------------------------------------------------|----------|----------|
@@ -180,4 +180,6 @@ If you don't want to delete the command when removing, a better alternative is t
 [PyPIjsonschema]: https://pypi.org/project/jsonschema/ "jsonschema PyPI"
 [python]: https://www.python.org "Python"
 [RestrictedPython]: https://github.com/zopefoundation/RestrictedPython "RestrictedPython GitHub"
+[schema-command]: https://raw.githubusercontent.com/Cubicpath/dyncommands/master/src/dyncommands/schemas/command.schema.json# "Raw Command Schema"
+[schema-parser]: https://raw.githubusercontent.com/Cubicpath/dyncommands/master/src/dyncommands/schemas/parser.schema.json# "Raw commands.json Schema"
 [unittests]: https://github.com/Cubicpath/dyncommands/actions/workflows/tests.yaml "Test Results"

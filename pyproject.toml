@@ -53,7 +53,8 @@ good-names = [
 max-line-length=160
 
 [tool.pytest.ini_options]
-addopts = "--cov=dyncommands --cov-report=html"
+minversion = "6.0"
+addopts = "--cov=dyncommands --cov-report=html --cov-fail-under=100"
 testpaths = [
     "tests",
 ]

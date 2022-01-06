@@ -9,10 +9,26 @@ from pathlib import Path
 
 from jsonschema.exceptions import *
 
-from dyncommands.schema import *
+from dyncommands.schemas import *
 
 # Boilerplate to allow running script directly.
 if __name__ == '__main__' and __package__ is None: sys.path.insert(1, str(Path(__file__).resolve().parent.parent)); __package__ = 'tests'
+
+
+class TestSchemaHolder(unittest.TestCase):
+    class _Test(SchemaHolder):
+        __slots__ = ()
+        _SCHEMA = {}
+
+    def test_NotImplemented(self):
+        with self.assertRaises(NotImplementedError):
+            class _test_(SchemaHolder):
+                ...
+
+    def test_slots(self) -> None:
+        a = self._Test()
+        with self.assertRaises(AttributeError):
+            a.non_existent = 1
 
 
 class TestCommandData(unittest.TestCase):
@@ -35,10 +51,6 @@ class TestCommandData(unittest.TestCase):
         self.assertListEqual(self.test_command.children, [])
         self.assertTrue(self.test_command.overridable)
         self.assertFalse(self.test_command.disabled)
-
-    def test_slots(self) -> None:
-        with self.assertRaises(AttributeError):
-            self.test_command.non_existent = 1
 
     def test_validate(self) -> None:
         CommandData.validate(self.test_command)
@@ -65,10 +77,6 @@ class TestParserData(unittest.TestCase):
         self.assertRaises(KeyError, ParserData, {})
         self.assertEqual(self.test_data.command_prefix, '')
         self.assertListEqual(self.test_data.commands, [])
-
-    def test_slots(self) -> None:
-        with self.assertRaises(AttributeError):
-            self.test_data.non_existent = 1
 
     def test_validate(self) -> None:
         ParserData.validate(self.test_data)
