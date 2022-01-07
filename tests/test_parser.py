@@ -12,6 +12,7 @@ from shutil import copytree
 from shutil import rmtree
 
 from dyncommands import *
+from dyncommands.exceptions import *
 from dyncommands.schemas import CommandData
 from dyncommands.utils import get_raw_text
 

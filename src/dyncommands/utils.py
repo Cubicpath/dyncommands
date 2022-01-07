@@ -9,10 +9,10 @@ from typing import SupportsIndex
 import requests
 
 __all__ = (
-    'PrivateProxy',
+    'DUMMY_FUNC',
     'get_raw_text',
     'ireplace',
-    'DUMMY_FUNC'
+    'PrivateProxy',
 )
 
 DUMMY_FUNC: Callable[[...], None] = lambda *args, **kwargs: None

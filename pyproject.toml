@@ -53,6 +53,7 @@ good-names = [
 ]
 max-line-length=160
 
+# [tool.pytest] is reserved for future use; [tool.pytest.ini_options] is a temporary bridge to the newer TOML format.
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "--cov=dyncommands --cov-report=html --cov-fail-under=100"

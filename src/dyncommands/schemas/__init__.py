@@ -10,9 +10,10 @@ from jsonschema import Draft7Validator
 
 __all__ = (
     'CommandData',
+    'get_schema',
     'ParserData',
-    'SchemaHolder',
     'SCHEMA',
+    'SchemaHolder',
 )
 
 
