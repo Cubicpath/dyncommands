@@ -13,6 +13,7 @@ from dyncommands.utils import *
 if __name__ == '__main__' and __package__ is None: sys.path.insert(1, str(Path(__file__).resolve().parent.parent)); __package__ = 'tests'
 
 
+# noinspection PyUnresolvedReferences
 class TestPrivateProxy(unittest.TestCase):
     """Tests for PrivateProxy."""
 
@@ -75,23 +76,31 @@ class TestFunctions(unittest.TestCase):
 
     def test_ireplace(self) -> None:
         """ireplace comparisons and str.replace parity"""
-        self.assertEqual(self.test_string, ireplace(self.test_string, '', ''))  # Empty strings
+        # Empty strings
+        self.assertEqual(self.test_string, ireplace(self.test_string, '', ''))
         self.assertEqual(self.test_string, self.test_string.replace('', ''))
-        self.assertEqual(self.test_string, ireplace(self.test_string, ' ', ' '))  # Whitespace strings
+
+        # Whitespace strings
+        self.assertEqual(self.test_string, ireplace(self.test_string, ' ', ' '))
         self.assertEqual(self.test_string, self.test_string.replace(' ', ' '))
-        self.assertEqual(self.test_string, ireplace(self.test_string, self.test_string, self.test_string))  # Replace self with self
+
+        # Replace self with self
+        self.assertEqual(self.test_string, ireplace(self.test_string, self.test_string, self.test_string))
         self.assertEqual(self.test_string, self.test_string.replace(self.test_string, self.test_string))
-        self.assertEqual(self.test_string, ireplace(self.test_string, self.test_string.swapcase(), self.test_string))  # Case-swapped Replace self with self
-        self.assertEqual('', ireplace(self.test_string, self.test_string, ''))  # Replace self with empty string
-        self.assertEqual('', ireplace(self.test_string, self.test_string.swapcase(), ''))  # Replace Case-swapped self with empty string
-        self.assertEqual('', ireplace(self.test_string.swapcase(), self.test_string, ''))  # Case-swapped Replace self with empty string
-        self.assertEqual('OWFMG)#0i30t93jf ()I#jf9oKS9 k( j3jr 9J(RK ', ireplace(self.test_string, 'SM OEF', ''))  # Replace prefix with empty string
-        self.assertEqual('sm oefOWFMG)#0i30t93test( j3jr 9J(RK ', ireplace(self.test_string, 'jf ()I#jf9oKS9 k', 'test'))  # Replace substring with 'test'
-        self.assertEqual('sm oefOWFMG)#0i30t93test( j3jr 9J(RK ', ireplace(self.test_string, 'jf ()I#jf9oKS9 k'.swapcase(), 'test'))  # Case-swapped Replace substring with 'test'
-        self.assertEqual(ireplace(self.test_string, 'Sm oEf', ''), ireplace(self.test_string, 'SM OEF', ''))  # Parity between Case-swapped Replace prefix
-        self.assertEqual(self.test_string.replace('', 'sm oef'), ireplace(self.test_string, '', 'sm oef'))  # Replicate str.replace behavior for replacing empty string
+        self.assertEqual(self.test_string, ireplace(self.test_string, self.test_string.swapcase(), self.test_string))
+
+        # Replace self with empty string
+        self.assertEqual('', ireplace(self.test_string, self.test_string, ''))
+        self.assertEqual('', ireplace(self.test_string, self.test_string.swapcase(), ''))
+        self.assertEqual('', ireplace(self.test_string.swapcase(), self.test_string, ''))
+
+        # Replace substrings
+        self.assertEqual(self.test_string[6:], ireplace(self.test_string, 'SM OEF', ''))  # Replace prefix with empty string
+        self.assertEqual(ireplace(self.test_string, 'Sm oEf', ''), ireplace(self.test_string, 'SM OEF', ''))  # Parity between Case-swapped replace
+        self.assertEqual(self.test_string.replace('', 'sm oef'), ireplace(self.test_string, '', 'sm oef'))  # Replicate str.replace behavior for empty string
 
     def test_version_stringify(self) -> None:
+        """_version.py stringify checks"""
         self.assertEqual(version_stringify(2021, 9), '2021.9')
         self.assertEqual(version_stringify(0, 3, 2, 'beta'), '0.3.2b')
         self.assertEqual(version_stringify(1, 0, 0, 'release'), '1.0')
@@ -103,7 +112,11 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual(version_stringify(1, 0, local='ubuntu', local_ver=2, local_ver_sep='-'), '1.0+ubuntu-2')
         self.assertRaises(TypeError, version_stringify, self.test_string)
         kwargs = {}
-        for kwarg in ('releaselevel', 'post_spelling', 'local_ver_sep', 'pre_sep', 'pre_ver_sep', 'post_sep', 'post_ver_sep', 'dev_sep', 'dev_post_sep', 'dev_post_ver_sep'):
+        test_keys = (
+            'releaselevel', 'post_spelling', 'local_ver_sep', 'pre_sep', 'pre_ver_sep',
+            'post_sep', 'post_ver_sep', 'dev_sep', 'dev_post_sep', 'dev_post_ver_sep'
+        )
+        for kwarg in test_keys:
             kwargs.update({kwarg: '+11_39/8 \08k.f39-h$f'})
             self.assertRaises(ValueError, version_stringify, 1, 0, **kwargs)
             kwargs.clear()

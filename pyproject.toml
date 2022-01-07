@@ -15,6 +15,7 @@ py-version="3.9"
 disable = [
     "C",    # Conventions
     "R",    # Reformats
+    "unnecessary-lambda",       # W0108
     "protected-access",         # W0212
     "wildcard-import",          # W0401
     "unused-wildcard-import",   # W0614
