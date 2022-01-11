@@ -53,57 +53,26 @@ class _CommandPolicy(RestrictingNodeTransformer):
 # noinspection PyProtectedMember
 class Command(Node):
     """Dynamic command object. Created on demand by a :py:class:`CommandParser`."""
-    __slots__ = ('_function', '_parser')
+    __slots__ = ('_function',)
 
     def __init__(self, data: Optional[CommandData], parser: 'CommandParser') -> None:
         """Build :py:class:`Command` from :py:class:`ParserData` and matching zzz__ modules."""
         super().__init__()
         self._function: Callable = DUMMY_FUNC
-        self._parser:   CommandParser = parser
         if data is not None:
-            self.name = data.name
-            self.usage = data.usage
-            self.description = data.description
-            self.permission = data.permission
+            self.name = data.name  # String; required
+            self.usage = data.usage  # String
+            self.description = data.description  # String
+            self.permission = data.permission  # Integer; min of -1
             self.children = CaseInsensitiveDict({props.name: Node(parent=self, **props) for props in data.children})
-            self.disabled = data.disabled
+            self.disabled = data.disabled  # Boolean
 
             if data.function is True:  # True, False, and None
-                self._load_function()
+                parser._load_module(self)
 
     def __call__(self, *args, **kwargs) -> Optional[str]:
-        """Syntax sugar for :py:method:`~Command._execute`."""
+        """Syntax sugar for :py:method:`Command._execute`."""
         return self._execute(*args, **kwargs)
-
-    # pylint: disable=exec-used
-    def _load_function(self) -> None:
-        """Loads in python code from storage for future execution."""
-        module_path: Path = self._parser.path / f'zzz__{self.name}.py'
-        locals_:     dict[str, Any] = {}
-
-        try:
-            with module_path.open(mode='r', encoding='utf8') as file:
-                # Attempt to compile code and run function definition
-                plaintext_code = file.read()
-                if not self._parser._unrestricted:
-                    # Restricted
-                    byte_code = safe_compile(plaintext_code, str(module_path), 'exec', policy=_CommandPolicy)
-                    exec(byte_code, command_globals, locals_)
-                else:
-                    # Unrestricted
-                    globals_ = globals().copy()
-                    globals_.update({'__file__': str(module_path)})
-                    byte_code = compile(plaintext_code, str(module_path), 'exec')
-                    exec(byte_code, globals_, locals_)
-
-        except (FileNotFoundError, SyntaxError, NotImplementedError) as e:
-            self._parser.print(str(e))
-            self._parser.print(f"Discarding broken command '{self.name}' from {module_path}.")
-            self._parser.remove_command(self.name)
-
-        else:
-            self._parser.print(f"Loading file {module_path} from disk into '{self.name}'.")
-            self._function = locals_.get('command', DUMMY_FUNC)
 
     def _execute(self, *args, **kwargs) -> Optional[str]:
         """:py:class:`Command` (or last :py:class:`Node`)'s permission must be at least 0 and equal to or less than
@@ -116,7 +85,7 @@ class Command(Node):
         :raises NoPermissionError: When contextual source does not have the required permissions.
         """
         context: CommandContext = kwargs['context']
-        kwargs['parser'] = self._parser
+        parser: CommandParser = kwargs['parser']
         kwargs['self'] = self
 
         final_node: Node = self
@@ -125,10 +94,10 @@ class Command(Node):
 
         if not self.disabled and not final_node.disabled:
             # Get permission level of last argument with properties, or the command itself if no args with properties
-            if context.source.has_permission(final_node.permission) or self._parser._ignore_permission:
-                if not self._parser._unrestricted:
+            if context.source.has_permission(final_node.permission) or parser._ignore_permission:
+                if not parser._unrestricted:
                     # Proxy public attributes of kwargs; exclude Path attributes
-                    kwargs = {kwarg: PrivateProxy(kwval, self._parser._should_hide_attr) for kwarg, kwval in kwargs.items()}
+                    kwargs = {kwarg: PrivateProxy(kwval, parser._should_hide_attr) for kwarg, kwval in kwargs.items()}
                 try:
                     return self._function(*args, **kwargs)
                 except Exception as e:
@@ -183,6 +152,36 @@ class CommandParser:
         with json_path.open(mode='w', encoding='utf8') as file:
             json.dump(new_json, file, indent=2)
 
+    # pylint: disable=exec-used
+    def _load_module(self, command: Command) -> None:
+        """Loads a command's respective python code from storage."""
+        module_path: Path = self.path / f'zzz__{command.name}.py'
+        locals_:     dict[str, Any] = {}
+
+        try:
+            with module_path.open(mode='r', encoding='utf8') as file:
+                # Attempt to compile code and run function definition
+                plaintext_code = file.read()
+                if not self._unrestricted:
+                    # Restricted
+                    byte_code = safe_compile(plaintext_code, str(module_path), 'exec', policy=_CommandPolicy)
+                    exec(byte_code, command_globals, locals_)
+                else:
+                    # Unrestricted
+                    globals_ = globals().copy()
+                    globals_.update({'__file__': str(module_path)})
+                    byte_code = compile(plaintext_code, str(module_path), 'exec')
+                    exec(byte_code, globals_, locals_)
+
+        except (FileNotFoundError, SyntaxError, NotImplementedError) as e:
+            self.print(str(e))
+            self.print(f"Discarding broken command '{command.name}' from {module_path}.")
+            self.remove_command(command.name)
+
+        else:
+            self.print(f"Loading file {module_path} from disk into '{command.name}'.")
+            command._function = locals_.get('command', DUMMY_FUNC)
+
     def _should_hide_attr(self, name: str, o: Any) -> bool:
         if self._unrestricted:
             return False
@@ -204,20 +203,12 @@ class CommandParser:
         if json_path.exists():
             with json_path.open(mode='r', encoding='utf8') as file:
                 json_data: ParserData = ParserData(json.load(file))
+                json_data.validate(json_data)
 
             self._command_prefix = json_data.command_prefix
             self.command_data = json_data.commands
             self.commands = CaseInsensitiveDict({command.name: Command(command, self) for command in self.command_data})
 
-            # Load json data a second time to check for any remnant commands in memory that weren't removed during failed compilation
-            with json_path.open(mode='r', encoding='utf8') as file:
-                updated_json_data: ParserData = ParserData(json.load(file))
-
-            if json_data != updated_json_data:
-                self.command_data = updated_json_data.commands
-                self.commands = CaseInsensitiveDict({command.name: Command(command, self) for command in self.command_data})
-
-            json_data.validate(json_data)
         else:
             raise FileNotFoundError(f'commands.json not in commands_path ({self.path})')
 
@@ -239,7 +230,7 @@ class CommandParser:
             split: list[str] = input_.split(self._delimiting_str)
             name, args = split[0], split[1:]
             if self.commands.get(name) is not None:
-                kwargs.update({'context': context})
+                kwargs.update({'context': context, 'parser': self})
                 try:
                     # Call command function with args and kwargs
                     return_val = self.commands[name](*args, **kwargs)
@@ -273,16 +264,16 @@ class CommandParser:
         json_path: Path = self.path / 'commands.json'
 
         with json_path.open(mode='r', encoding='utf8') as file:
-            data:     dict[str, Any] = json.load(file)
-            commands: dict[str, dict] = {command['name']: command for command in data.get('commands')}
+            data:     ParserData = ParserData(json.load(file))
+            commands: dict[str, CommandData] = {command.name: command for command in data.commands}
 
-            if commands.get(command_name, {}).get('overridable') is not False:
-                commands[command_name]['disabled'] = value
+            if commands.get(command_name, CommandData.empty()).overridable is not False:
+                commands[command_name].disabled = value
                 self.commands.get(command_name).disabled = value
             else:
                 return False
 
-            data.update({'commands': list(commands.values())})
+            data.commands = list(commands.values())
 
         with json_path.open(mode='w', encoding='utf8') as file:
             json.dump(data, file, indent=2)
@@ -410,38 +401,41 @@ class CommandParser:
             # Replace function name with generic name 'command'
             lines.insert(func_line, lines.pop(func_line).strip().replace(f'def {func_name}', 'def command', 1) + '\n')
 
-            new_data: dict[str, Any] = {
-                'name': command_data[0],
-                'usage': command_data[1],
-                'description': command_data[2],
-                'permission': command_data[3],
-                'function': True,
-                'children': command_data[4],
-                'overridable': True,
-                'disabled': False
-            }
+            new_data: CommandData = CommandData(
+                name=command_data[0],
+                usage=command_data[1],
+                description=command_data[2],
+                permission=command_data[3],
+                function=True,
+                children=command_data[4],
+                overridable=True,
+                disabled=False
+            )
 
             json_path:   Path = self.path / 'commands.json'
-            module_path: Path = self.path / f'zzz__{new_data["name"]}.py'
+            module_path: Path = self.path / f'zzz__{new_data.name}.py'
 
             with json_path.open(mode='r', encoding='utf8') as json_file:
-                data: dict[str, Any] = json.load(json_file)
+                data: ParserData = ParserData(json.load(json_file))
 
-            commands: dict[str, dict[str, Any]] = {command['name']: command for command in data.get('commands')}
+            commands: dict[str, CommandData] = {command.name: command for command in data.commands}
 
-            if commands.get(new_data['name'], {}).get('overridable') is not False:
-                commands.update({new_data['name']: new_data})
+            if commands.get(new_data.name, CommandData.empty()).overridable is not False:
+                commands[new_data.name] = new_data
             else:
                 return ''
 
-            data.update({'commands': list(commands.values())})
+            data.commands = list(commands.values())
 
             with json_path.open(mode='w', encoding='utf8') as json_file, module_path.open(mode='w', encoding='utf8') as module_file:
                 json.dump(data, json_file, indent=2)
                 json_file.write('\n')
                 module_file.writelines(lines)
 
-            return new_data['name']
+            self.command_data = data.commands
+            self.commands[new_data.name] = Command(commands[new_data.name], self)
+
+            return new_data.name
 
         return ''
 
@@ -456,17 +450,17 @@ class CommandParser:
         removed:     bool = False
 
         with json_path.open(mode='r', encoding='utf8') as file:
-            data: dict[str, Any] = json.load(file)
+            data: ParserData = ParserData(json.load(file))
 
-        commands: dict[str, dict[str, Any]] = {command['name']: command for command in data.get('commands')}
+        commands: dict[str, CommandData] = {command.name: command for command in data.commands}
 
-        if commands.get(name, {}).get('overridable') is not False:
-            if commands.pop(name, None) is not None:
-                removed = True
-        else:
+        if commands.get(name, CommandData.empty()).overridable is False:
             return ''
 
-        data.update({'commands': list(commands.values())})
+        if commands.pop(name, None) is not None:
+            removed = True
+
+        data.commands = list(commands.values())
 
         with json_path.open(mode='w', encoding='utf8') as file:
             json.dump(data, file, indent=2)
@@ -478,4 +472,9 @@ class CommandParser:
         else:
             removed = True
 
-        return name if removed else ''
+        if removed:
+            self.command_data = data.commands
+            self.commands.pop(name, None)
+            return name
+
+        return ''

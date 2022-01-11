@@ -157,12 +157,14 @@ class TestCommandParser(unittest.TestCase):
     def test_remove_command(self) -> None:
         # Test overridable as false
         self.assertEqual(self.parser.remove_command('commands'), '')
-        self.parser.reload()
         self.assertIn('commands', self.parser.commands)
+
+        # Remove non-existent command
+        self.assertEqual(self.parser.remove_command('mc983jn784'), '')
+        self.assertNotIn('mc983jn784', self.parser.commands)
 
         # Test function as false
         self.assertEqual(self.parser.remove_command('test-no-function'), 'test-no-function')
-        self.parser.reload()
         self.assertNotIn('test-no-function', self.parser.commands)
 
     def test_set_disabled(self) -> None:
