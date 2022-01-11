@@ -33,7 +33,7 @@ class TestSchemaHolder(unittest.TestCase):
 
 class TestCommandData(unittest.TestCase):
     def setUp(self) -> None:
-        self.test_command = CommandData(name='')
+        self.test_command = CommandData.empty()
 
     def test_commands_json(self) -> None:
         with (Path(__file__).parent / 'data/commands/commands.json').open(mode='r', encoding='utf8') as file:
@@ -66,7 +66,7 @@ class TestCommandData(unittest.TestCase):
 
 class TestParserData(unittest.TestCase):
     def setUp(self) -> None:
-        self.test_data = ParserData({'commandPrefix': '', 'commands': []})
+        self.test_data = ParserData.empty()
 
     def test_commands_json(self) -> None:
         with (Path(__file__).parent / 'data/commands/commands.json').open(mode='r', encoding='utf8') as file:
