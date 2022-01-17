@@ -1,5 +1,5 @@
 ###################################################################################################
-#                              MIT Licence (C) 2021 Cubicpath@Github                              #
+#                              MIT Licence (C) 2022 Cubicpath@Github                              #
 ###################################################################################################
 """Exceptions raised during parsing."""
 from typing import Optional

@@ -1,5 +1,5 @@
 ###################################################################################################
-#                              MIT Licence (C) 2021 Cubicpath@Github                              #
+#                              MIT Licence (C) 2022 Cubicpath@Github                              #
 ###################################################################################################
 """Simple object models that are easily extensible and used during parsing."""
 from collections.abc import Callable

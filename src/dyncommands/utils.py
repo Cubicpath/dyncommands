@@ -1,5 +1,5 @@
 ###################################################################################################
-#                              MIT Licence (C) 2021 Cubicpath@Github                              #
+#                              MIT Licence (C) 2022 Cubicpath@Github                              #
 ###################################################################################################
 """Util functions, classes, and attributes for Dynamic Commands"""
 from collections.abc import Callable
