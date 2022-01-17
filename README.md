@@ -112,7 +112,7 @@ and stored in memory for execution. The function has access to any args that wer
 - Any custom kwargs passed to `CommandParser.parse(context: CommandContext, **kwargs)`.
 
 Since commands cannot import their own modules, some are included in globals (`math`, `random`, and `string`).
-Other attributes included in the global scope are: `getitem` (_operator.getitem_), and `InvalidUsageError` (_dyncommands.exceptions.InvalidUsageError_).
+Other attributes included in the global scope are: `getitem` (_operator.getitem_), and `ImproperUsageError` (_dyncommands.exceptions.ImproperUsageError_).
 
 #### Example command module:
 ```python
