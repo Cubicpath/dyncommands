@@ -14,21 +14,65 @@ from dyncommands.schemas import *
 # Boilerplate to allow running script directly.
 if __name__ == '__main__' and __package__ is None: sys.path.insert(1, str(Path(__file__).resolve().parent.parent)); __package__ = 'tests'
 
+with (Path(__file__).parent / 'data/schemas/test.schema.json').open('r', encoding='utf8') as _file:
+    TEST_SCHEMA = json.load(_file)
+
 
 class TestSchemaHolder(unittest.TestCase):
     class _Test(SchemaHolder):
         __slots__ = ()
-        _SCHEMA = {}
+        _SCHEMA = TEST_SCHEMA
 
-    def test_NotImplemented(self):
+        def __init__(self, seq=None, **kwargs) -> None:
+            kw = [
+                kwargs.pop('required', None),
+            ]
+
+            super().__init__(seq if seq is not None else {}, **kwargs)
+            self.required = kw[0] if kw[0] is not None else self['required']
+
+        @classmethod
+        def empty(cls) -> 'TestSchemaHolder._Test':
+            return cls(required='')
+
+    def setUp(self) -> None:
+        self.test_holder = self._Test.empty()
+
+    def test_NotImplemented(self) -> None:
         with self.assertRaises(NotImplementedError):
             class _test_(SchemaHolder):
                 ...
 
-    def test_slots(self) -> None:
-        a = self._Test()
+    def test_getattr(self) -> None:
+        _ = getattr(self.test_holder, 'pop')
+        with self.assertRaises(KeyError):
+            _ = self.test_holder.non_existent
+
+        # Get an inherited method
+        self.assertEqual(type(self.test_holder.pop), type({}.pop))
+        self.assertIsNone(self.test_holder.get('pop'))
+
+    def test_setattr(self) -> None:
+        with self.assertRaises(KeyError):
+            self.test_holder.non_existent = 1
+
+        # Inherited methods are read-only
         with self.assertRaises(AttributeError):
-            a.non_existent = 1
+            self.test_holder._SCHEMA = {}
+
+        self.assertIsNone(self.test_holder.get('_SCHEMA'))
+
+    def test_delattr(self) -> None:
+        with self.assertRaises(KeyError):
+            del self.test_holder.non_existent
+
+        # Inherited methods are read-only
+        with self.assertRaises(AttributeError):
+            del self.test_holder._SCHEMA
+
+        # Delete a required key
+        with self.assertRaises(KeyError):
+            del self.test_holder.required
 
 
 class TestCommandData(unittest.TestCase):
@@ -75,7 +119,7 @@ class TestParserData(unittest.TestCase):
     def test_defaults(self) -> None:
         self.assertRaises(KeyError, ParserData)
         self.assertRaises(KeyError, ParserData, {})
-        self.assertEqual(self.test_data.command_prefix, '')
+        self.assertEqual(self.test_data.commandPrefix, '')
         self.assertListEqual(self.test_data.commands, [])
 
     def test_validate(self) -> None:
