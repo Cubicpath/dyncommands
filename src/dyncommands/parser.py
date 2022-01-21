@@ -205,7 +205,7 @@ class CommandParser:
                 json_data: ParserData = ParserData(json.load(file))
                 json_data.validate(json_data)
 
-            self._command_prefix = json_data.command_prefix
+            self._command_prefix = json_data.commandPrefix
             self.command_data = json_data.commands
             self.commands = CaseInsensitiveDict({command.name: Command(command, self) for command in self.command_data})
 
@@ -447,7 +447,6 @@ class CommandParser:
         """
         json_path:   Path = self.path / 'commands.json'
         module_path: Path = self.path / f'zzz__{name}.py'
-        removed:     bool = False
 
         with json_path.open(mode='r', encoding='utf8') as file:
             data: ParserData = ParserData(json.load(file))
@@ -457,9 +456,7 @@ class CommandParser:
         if commands.get(name, CommandData.empty()).overridable is False:
             return ''
 
-        if commands.pop(name, None) is not None:
-            removed = True
-
+        removed: bool = commands.pop(name, None) is not None
         data.commands = list(commands.values())
 
         with json_path.open(mode='w', encoding='utf8') as file:
