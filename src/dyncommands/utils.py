@@ -25,28 +25,27 @@ class PrivateProxy:
     def __init__(self, o: object,
                  exclude_predicate: Callable[[str, Any], bool] = lambda attr, attr_val: False,
                  include_predicate: Callable[[str, Any], bool] = lambda attr, attr_val: False,
-                 starting_underscore_private: bool = True,
-                 eval_for_attribute_values:   bool = True):
-        """Object that proxies another object, created to prevent methods from accessing private data.
+                 starting_underscore_private: bool = True):
+        """Object that proxies another object's attributes, created to prevent methods from accessing private data.
 
         All attributes starting with _ are by default considered private and are not proxied through.
+
+        Note: The original class is NOT stored. This means that you cannot use type checks with a PrivateProxy.
 
         :arg o: Object to proxy.
         :arg exclude_predicate: If an attribute name passes the given predicate, it's then considered private.
         :arg include_predicate: If an attribute name passes the given predicate, it will be proxied regardless of private status.
-        :arg starting_underscore_private: All attributes starting with an underscore are private if True.
-        :arg eval_for_attribute_values: Must be true to work with objects using __slots__.
+        :arg starting_underscore_private: All attributes starting with an underscore are by default private if True.
         """
 
         for attr in dir(o):
-            # Allow use of eval to ensure compatibility with objects using __slots__ as they do not have a __dict__ and attributes must be evaluated
-            attr_val:   Any = eval(f'o.{attr}', {'o': o}) if eval_for_attribute_values else vars(o).get(attr)
+            attr_val:   Any = getattr(o, attr)
             is_private: bool = exclude_predicate(attr, attr_val) or (attr.startswith('_') and starting_underscore_private)
             if is_private and include_predicate(attr, attr_val) is False:
                 # Don't proxy attr
                 continue
             # Proxy attr
-            setattr(self, attr, getattr(o, attr))
+            setattr(self, attr, attr_val)
 
 
 def get_raw_text(link: str) -> str:
