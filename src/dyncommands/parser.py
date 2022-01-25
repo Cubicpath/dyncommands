@@ -164,13 +164,13 @@ class CommandParser:
                 plaintext_code = file.read()
                 if not self._unrestricted:
                     # Restricted
-                    byte_code = safe_compile(plaintext_code, str(module_path), 'exec', policy=_CommandPolicy)
+                    byte_code = safe_compile(plaintext_code, filename=str(module_path), mode='exec', policy=_CommandPolicy)
                     exec(byte_code, command_globals, locals_)
                 else:
                     # Unrestricted
                     globals_ = globals().copy()
-                    globals_.update({'__file__': str(module_path)})
-                    byte_code = compile(plaintext_code, str(module_path), 'exec')
+                    globals_.update(__file__=str(module_path), __package__=None)
+                    byte_code = compile(plaintext_code, filename=str(module_path), mode='exec')
                     exec(byte_code, globals_, locals_)
 
         except (FileNotFoundError, SyntaxError, NotImplementedError) as e:
@@ -189,7 +189,7 @@ class CommandParser:
         # Include already proxied objects
         return not isinstance(o, PrivateProxy) and (
                 isinstance(o, Path) or  # Exclude Path attributes
-                name.startswith('_')  # Exclude protected attributes
+                name.startswith('_')    # Exclude protected attributes
         )
 
     def reload(self) -> None:
@@ -282,7 +282,11 @@ class CommandParser:
 
     def add_command(self, text: str, link: bool = False, **kwargs) -> str:
         """Adds a :py:class:`Command` using data read from {text}. Command metadata must either be passed in through a kwarg,
-        or structured as an inline python comment above the command function. Ex::
+        or structured as an inline python comment above the command function.
+
+        ---------------------------------------
+
+        Example of passing metadata inline::
 
             # Name: do-nothing
             # Usage: do-nothing [amount:integer sides:integer]
@@ -290,6 +294,15 @@ class CommandParser:
             # Permission: 0
             def command(*args, **kwargs):
                 pass
+
+        ---------------------------------------
+
+        Example of passing metadata over kwargs::
+
+            parser = CommandParser('./')
+            with open('some_metadata.json') as _file:
+                metadata = json.load(_file)
+            parser.add_command('https://gist.github.com/random/892hdh2fh389x0wcmksio7m', link=True, **metadata)
 
         :param text: Body of text or a link to read command data from.
         :param link: Whether {text} is a link.

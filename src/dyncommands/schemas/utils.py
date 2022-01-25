@@ -14,6 +14,7 @@ __all__ = (
 def get_schema(name: str) -> dict[str, Any]:
     """Returns the JSON representation of a schema resource.
 
-    :raises ValueError: If __package__ of this module is None
+    :raises FileNotFoundError: If name given does not exist as a resource.
+    :raises ValueError: If __package__ of this module is None.
     """
     return loads(read_text(__package__ or '', f'{name}.schema.json'))

@@ -97,6 +97,7 @@ class Node:
 
     def add_children(self, *children: 'Node') -> None:
         """Add children to self.children and set their parent as self.
+
         :param children: Node to add as child.
         """
         for child in children:
