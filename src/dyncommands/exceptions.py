@@ -11,8 +11,13 @@ __all__ = (
     'DisabledError',
     'ImproperUsageError',
     'NoPermissionError',
-    'NotFoundError'
+    'NotFoundError',
+    'UnrestrictedWarning',
 )
+
+
+class UnrestrictedWarning(UserWarning):
+    """Warns when commands will be run as unrestricted."""
 
 
 class CommandError(Exception):

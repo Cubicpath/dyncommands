@@ -6,20 +6,25 @@ import json
 import operator
 from collections.abc import Callable
 from pathlib import Path
+from platform import python_implementation as _impl
 from typing import Any
 from typing import Optional
 from typing import Union
+from warnings import warn
 
-from RestrictedPython import compile_restricted as safe_compile
-from RestrictedPython import limited_builtins
-from RestrictedPython import RestrictingNodeTransformer
-from RestrictedPython import safe_builtins
-from RestrictedPython import utility_builtins
-from RestrictedPython.Eval import default_guarded_getitem
-from RestrictedPython.Eval import default_guarded_getiter
-from RestrictedPython.Guards import guarded_iter_unpack_sequence
-from RestrictedPython.Guards import guarded_unpack_sequence
-from RestrictedPython.Guards import safer_getattr
+if _impl() == 'CPython':
+    from RestrictedPython import compile_restricted as safe_compile
+    from RestrictedPython import limited_builtins
+    from RestrictedPython import RestrictingNodeTransformer
+    from RestrictedPython import safe_builtins
+    from RestrictedPython import utility_builtins
+    from RestrictedPython.Eval import default_guarded_getitem
+    from RestrictedPython.Eval import default_guarded_getiter
+    from RestrictedPython.Guards import guarded_iter_unpack_sequence
+    from RestrictedPython.Guards import guarded_unpack_sequence
+    from RestrictedPython.Guards import safer_getattr
+else:
+    warn(ImportWarning('RestrictedPython is not support on non-CPython implementations, and will not be imported.'))  # pragma: no cover
 
 from .exceptions import *
 from .models import *
@@ -31,23 +36,23 @@ __all__ = (
     'CommandParser',
 )
 
-command_builtins = safe_builtins.copy()
-command_builtins.update(limited_builtins)
-command_builtins.update(utility_builtins)
-command_globals = {
-    '__builtins__': command_builtins,
-    '_getattr_': safer_getattr,
-    '_getitem_': default_guarded_getitem,
-    '_getiter_': default_guarded_getiter,
-    '_iter_unpack_sequence_': guarded_iter_unpack_sequence,
-    '_unpack_sequence_': guarded_unpack_sequence,
-    'ImproperUsageError': ImproperUsageError,
-    'getitem': operator.getitem
-}
+if _impl() == 'CPython':
+    command_builtins = safe_builtins.copy()
+    command_builtins.update(limited_builtins)
+    command_builtins.update(utility_builtins)
+    command_globals = {
+        '__builtins__': command_builtins,
+        '_getattr_': safer_getattr,
+        '_getitem_': default_guarded_getitem,
+        '_getiter_': default_guarded_getiter,
+        '_iter_unpack_sequence_': guarded_iter_unpack_sequence,
+        '_unpack_sequence_': guarded_unpack_sequence,
+        'ImproperUsageError': ImproperUsageError,
+        'getitem': operator.getitem
+    }
 
-
-class _CommandPolicy(RestrictingNodeTransformer):
-    ...
+    class _CommandPolicy(RestrictingNodeTransformer):
+        ...
 
 
 # noinspection PyProtectedMember
@@ -110,13 +115,16 @@ class Command(Node):
 class CommandParser:
     """Keeps track of all commands and command metadata. Allows for dynamic execution of commands through string parsing."""
 
-    def __init__(self, commands_path: Union[str, Path], silent: bool = False, ignore_permission: bool = False, unrestricted: bool = False) -> None:
+    def __init__(self, commands_path: Union[str, Path], silent: bool = False, ignore_permission: bool = False, unrestricted: Union[bool, None] = None) -> None:
         """Create a new Parser and load all command data from the given path.
 
         :param silent: If true, stops all debug printing.
         :param ignore_permission: If true, permission level is not taken into account when executing a command.
-        :param unrestricted: If true, disables RestrictedPython compilation of command modules.
+        :param unrestricted: If true, disables RestrictedPython compilation of command modules. Defaults to True when running on non-CPython implementations.
         """
+        if unrestricted is None:
+            unrestricted = False if _impl() == 'CPython' else True
+
         self.commands:            CaseInsensitiveDict[Command] = CaseInsensitiveDict()
         self.command_data:        list[CommandData] = []
         self.path:                Path = Path(commands_path)
@@ -128,7 +136,7 @@ class CommandParser:
         self._unrestricted:       bool = unrestricted
 
         if self._unrestricted:
-            self.print(f'WARNING. UNRESTRICTED MODE ON FOR {self.__repr__()} AT {self.path}. DO NOT RUN UNTRUSTED CODE.')
+            warn(UnrestrictedWarning(f'UNRESTRICTED MODE ON FOR {self.__repr__()} AT {self.path}. DO NOT RUN UNTRUSTED CODE.'))
 
         self.reload()
 
