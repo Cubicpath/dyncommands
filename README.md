@@ -176,7 +176,7 @@ with open('some_metadata.json') as _file:
     get_ = {'name': 'get', 'usage': 'get (username:string)', 'permission':0}
     set_ = {'name': 'set', 'usage': 'set (username:string amount:integer)', 'permission':500}
     children = [get_, set_]
-    parser.add_command(_file.read(), name='my-command', description='Command with child commands.')
+    parser.add_command(_file.read(), name='my-command', description='Command with child commands.' children=children)
 ```
 ```python
 parser = CommandParser('./')
