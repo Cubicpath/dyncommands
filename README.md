@@ -152,11 +152,16 @@ will read **text** as a link, and will get the raw text data from that link. Ex:
 
 **NOTE:** When adding a command, metadata for 'name' **must** to be filled. This can be done in the form of comments.
 
+Removing an already added command is relatively easy. Just call `CommandParser.remove_command(name: str)` with the name
+of the command that you want to remove, and it will delete both the metadata and the command module from the disk.
 
-#### Example of metadata as comments:
+If you don't want to delete the command when removing, a better alternative is to disable it with
+`CommandParser.set_disabled(name: str, value: bool)`.
+
+#### Example of metadata as in-line comments:
 ```python
 # Name: points
-# Usage: points [get (username:string)| set (username:string amount:integer)]
+# Usage: points [get (username:string) | set (username:string amount:integer)]
 # Description: Get your current points
 # Permission: 0
 # Children: [{'name': 'get', 'usage': 'get (username:string)', 'permission':0}, {'name': 'set', 'usage': 'set (username:string amount:integer)', 'permission':500}]
@@ -164,11 +169,21 @@ def command(*args, **kwargs):
     ...
 ```
 
-Removing an already added command is relatively easy. Just call `CommandParser.remove_command(name: str)` with the name
-of the command that you want to remove, and it will delete both the metadata and the command module from the disk.
-
-If you don't want to delete the command when removing, a better alternative is to disable it with
-`CommandParser.set_disabled(name: str, value: bool)`.
+#### Examples of metadata as kwargs:
+```python
+parser = CommandParser('./')
+with open('some_metadata.json') as _file:
+    get_ = {'name': 'get', 'usage': 'get (username:string)', 'permission':0}
+    set_ = {'name': 'set', 'usage': 'set (username:string amount:integer)', 'permission':500}
+    children = [get_, set_]
+    parser.add_command(_file.read(), name='my-command', description='Command with child commands.')
+```
+```python
+parser = CommandParser('./')
+with open('some_metadata.json') as _file:
+    metadata = json.load(_file)
+parser.add_command('https://gist.github.com/random/892hdh2fh389x0wcmksio7m', link=True, **metadata)
+```
 
 [coverage]: https://codecov.io/gh/Cubicpath/dyncommands "Codecov results"
 [Draft-07]: https://tools.ietf.org/html/draft-handrews-json-schema-01 "Draft-07"
