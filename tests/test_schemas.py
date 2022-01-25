@@ -1,7 +1,7 @@
 ###################################################################################################
 #                              MIT Licence (C) 2022 Cubicpath@Github                              #
 ###################################################################################################
-"""Tests for the schema.py module."""
+"""Tests for the dyncommands.schemas module."""
 import json
 import sys
 import unittest
@@ -10,6 +10,7 @@ from pathlib import Path
 from jsonschema.exceptions import *
 
 from dyncommands.schemas import *
+from dyncommands.schemas.constants import SCHEMA_DEFAULT
 
 # Boilerplate to allow running script directly.
 if __name__ == '__main__' and __package__ is None: sys.path.insert(1, str(Path(__file__).resolve().parent.parent)); __package__ = 'tests'
@@ -24,27 +25,44 @@ class TestSchemaHolder(unittest.TestCase):
         _SCHEMA = TEST_SCHEMA
 
         def __init__(self, seq=None, **kwargs) -> None:
+            seq = seq if seq is not None else {}
             kw = [
                 kwargs.pop('required', None),
+                kwargs.pop('normal', None),
+                kwargs.pop('get', None),
             ]
 
             super().__init__(seq if seq is not None else {}, **kwargs)
-            self.required = kw[0] if kw[0] is not None else self['required']
+            self.required = kw[0] if kw[0] is not None else seq['required']
+            if kw[1] is not None: self.normal = kw[1]
+            if kw[2] is not None: self.get = kw[2]
 
         @classmethod
         def empty(cls) -> 'TestSchemaHolder._Test':
             return cls(required='')
 
     def setUp(self) -> None:
-        self.test_holder = self._Test.empty()
+        self.test_holder = self._Test({'required': '', 'normal': '', 'get': 'test get'})
+        self._Test.validate(self.test_holder)
 
     def test_NotImplemented(self) -> None:
         with self.assertRaises(NotImplementedError):
-            class _test_(SchemaHolder):
+            class _test0_(SchemaHolder):
                 ...
 
-    def test_getattr(self) -> None:
-        _ = getattr(self.test_holder, 'pop')
+        with self.assertRaises(NotImplementedError):
+            class _test1_(SchemaHolder):
+                _SCHEMA = TEST_SCHEMA
+
+            _test1_.empty()
+
+    def test_dir(self) -> None:
+        expected = sorted(set(dir(type(self.test_holder)) + list(self.test_holder._SCHEMA.get('properties', {}).keys())))
+        result = dir(self.test_holder)
+
+        self.assertEqual(expected, result)
+
+    def test_getattribute(self) -> None:
         with self.assertRaises(KeyError):
             _ = self.test_holder.non_existent
 
@@ -56,9 +74,12 @@ class TestSchemaHolder(unittest.TestCase):
         with self.assertRaises(KeyError):
             self.test_holder.non_existent = 1
 
-        # Inherited methods are read-only
+        # Inherited attributes are read-only
         with self.assertRaises(AttributeError):
             self.test_holder._SCHEMA = {}
+
+        self.test_holder.normal = 'wow'
+        self.assertEqual('wow', self.test_holder.normal)
 
         self.assertIsNone(self.test_holder.get('_SCHEMA'))
 
@@ -66,13 +87,39 @@ class TestSchemaHolder(unittest.TestCase):
         with self.assertRaises(KeyError):
             del self.test_holder.non_existent
 
-        # Inherited methods are read-only
+        # Inherited attributes are read-only
         with self.assertRaises(AttributeError):
             del self.test_holder._SCHEMA
 
         # Delete a required key
         with self.assertRaises(KeyError):
             del self.test_holder.required
+
+        # Delete a normal key
+        del self.test_holder.normal
+
+    # noinspection PyTypeChecker
+    def test_item_lookups(self) -> None:
+        with self.assertRaises(TypeError):
+            _ = self.test_holder[None]
+
+        with self.assertRaises(TypeError):
+            self.test_holder[None] = None
+
+        with self.assertRaises(TypeError):
+            del self.test_holder[None]
+
+    def test_get(self) -> None:
+        self.assertEqual('', self.test_holder.get('normal'))
+        self.assertEqual('', self.test_holder.get('normal', SCHEMA_DEFAULT))
+        del self.test_holder['normal']
+
+        self.assertEqual(None, self.test_holder.get('normal'))
+        self.assertEqual('test default value', self.test_holder.get('normal', SCHEMA_DEFAULT))
+        self.assertEqual(self.test_holder.default_of('normal'), self.test_holder.get('normal', SCHEMA_DEFAULT))
+
+        self.assertIsNot(self.test_holder.get, self.test_holder.get('get'))
+        self.assertEqual('test get', self.test_holder.get('get'))
 
 
 class TestCommandData(unittest.TestCase):
