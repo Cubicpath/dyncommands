@@ -13,6 +13,7 @@ Dynamic command execution, parsing, and storage.
 [![CPython](https://img.shields.io/pypi/implementation/dyncommands?label=Impl&logo=python&style=flat-square)][python]
 
 ------------------------------
+
 About:
 ---------------
 Dyncommands allows you to dynamically import and run python functions. Useful for adding commands to IRC chatbots or CLI applications without a restart.
@@ -184,6 +185,21 @@ with open('some_metadata.json') as _file:
     metadata = json.load(_file)
 parser.add_command('https://gist.github.com/random/892hdh2fh389x0wcmksio7m', link=True, **metadata)
 ```
+
+### Permission Levels:
+
+The dyncommand `CommandParser` natively supports permission level handling, so you don't have to implement a similar
+system in every command function.
+
+Each command has the metadata value `permission`,
+(with the exception of the special value `-1`) is the minimum permission level required from the `CommandSource`.
+`-1` represents an "infinite" requirement, where no `CommandSource` will be able to execute it while the permission
+system is active.
+
+To disable the permission system, set the `CommandParser`'s `_ignore_permission` attribute to True.
+**NOTE:** since this attribute starts with an "_", attempting to change it from inside a command's function will result
+in failed compilation and an Exception.
+
 
 [coverage]: https://codecov.io/gh/Cubicpath/dyncommands "Codecov results"
 [Draft-07]: https://tools.ietf.org/html/draft-handrews-json-schema-01 "Draft-07"
