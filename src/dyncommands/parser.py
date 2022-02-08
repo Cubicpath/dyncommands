@@ -24,7 +24,7 @@ if _impl() == 'CPython':
     from RestrictedPython.Limits import limited_builtins  # isort:skip
     from RestrictedPython.Utilities import utility_builtins  # isort:skip
 else:
-    warn(ImportWarning('RestrictedPython is not support on non-CPython implementations, and will not be imported.'))  # pragma: no cover
+    warn(ImportWarning('RestrictedPython is not supported on non-CPython implementations, and will not be imported.'))  # pragma: no cover
 
 from .exceptions import *
 from .models import *

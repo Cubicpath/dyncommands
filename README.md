@@ -150,7 +150,7 @@ The easiest way to use this method is to read the command module as text and pas
 You can also store command modules online to allow for remote installation, as setting the **link** parameter to **True**
 will read **text** as a link, and will get the raw text data from that link. Ex: [gist] and [pastebin].
 
-**NOTE:** When adding a command, metadata for 'name' **must** to be filled. This can be done in the form of comments.
+**NOTE:** When adding a command, metadata for 'name' **must** be filled. This can be done in the form of comments.
 
 Removing an already added command is relatively easy. Just call `CommandParser.remove_command(name: str)` with the name
 of the command that you want to remove, and it will delete both the metadata and the command module from the disk.
