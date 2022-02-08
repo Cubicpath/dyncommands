@@ -120,7 +120,7 @@ class TestFunctions(unittest.TestCase):
             kwargs.update({kwarg: '+11_39/8 \08k.f39-h$f'})
             self.assertRaises(ValueError, version_stringify, 1, 0, **kwargs)
             kwargs.clear()
-        for kwarg in ('major', 'minor', 'micro', 'local_ver, post, dev, dev_post'):
+        for kwarg in ('local_ver', 'post', 'dev', 'dev_post'):
             kwargs.update({kwarg: 'string'})
             self.assertRaises(TypeError, version_stringify, 1, 0, **kwargs)
 
