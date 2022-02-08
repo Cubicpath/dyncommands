@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="Source and Distribution" pattern="file[dyncommands]:src//*||file[dyncommands]:tests//*||file:pyproject.toml||file:setup.cfg||file:README.md||file[dyncommands]:.github//*" />
+</component>
