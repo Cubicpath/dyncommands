@@ -43,7 +43,7 @@ class SchemaHolder(ABC, dict):
     __REF_CACHE: dict[str, type]
     _META_VALIDATOR: Validator = Draft7Validator  # jsonschema Validator to use
     _SCHEMA: dict[str, Any] = NotImplemented  # Must be overridden
-    _validator: Validator = NotImplemented  # Auto-built from _META_VALIDATOR and _SCHEMA if not defined
+    _VALIDATOR: Validator = NotImplemented  # Auto-built from _META_VALIDATOR and _SCHEMA if not defined
     _warned: bool = False  # Set to true to disable first-time warnings
 
     # # # # # # # # # # #  CLASS METHODS
@@ -54,8 +54,8 @@ class SchemaHolder(ABC, dict):
             raise NotImplementedError(f'{cls.__name__}._SCHEMA must be implemented when extending SchemaHolder.')
 
         Draft7Validator.check_schema(SCHEMA)
-        if cls._validator is NotImplemented:
-            cls._validator = cls._META_VALIDATOR(cls._SCHEMA)
+        if cls._VALIDATOR is NotImplemented:
+            cls._VALIDATOR = cls._META_VALIDATOR(cls._SCHEMA)
 
         cls.__REF_CACHE = {}
 
@@ -71,7 +71,7 @@ class SchemaHolder(ABC, dict):
 
         :param data: JSON data.
         """
-        cls._validator.validate(data)
+        cls._VALIDATOR.validate(data)
 
     # # # # # # # # # # #  INSTANCE METHODS
 
@@ -196,6 +196,7 @@ class SchemaHolder(ABC, dict):
         # Create a new schema holder using the definition found from the $ref value
         class CachedSchema(SchemaHolder):
             """Dynamically generated schema class meant to be cached for later use."""
+            __slots__ = ()
             _SCHEMA = definition
 
             @classmethod
@@ -250,7 +251,6 @@ class CommandData(SchemaHolder):
     """Python mapping to command.schema.json objects."""
     __slots__ = ()
     _SCHEMA: Final[dict[str, Any]] = get_schema('command')
-    _validator: Final[Draft7Validator] = Draft7Validator(_SCHEMA)
 
     @classmethod
     def empty(cls) -> 'CommandData':
@@ -285,7 +285,6 @@ class ParserData(SchemaHolder):
     """Python mapping to parser.schema.json objects."""
     __slots__ = ()
     _SCHEMA: Final[dict[str, Any]] = SCHEMA
-    _validator: Final[Draft7Validator] = Draft7Validator(_SCHEMA)
 
     @classmethod
     def empty(cls) -> 'ParserData':

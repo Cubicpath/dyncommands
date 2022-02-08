@@ -13,16 +13,16 @@ from typing import Union
 from warnings import warn
 
 if _impl() == 'CPython':
-    from RestrictedPython import compile_restricted as safe_compile
-    from RestrictedPython import limited_builtins
-    from RestrictedPython import RestrictingNodeTransformer
-    from RestrictedPython import safe_builtins
-    from RestrictedPython import utility_builtins
-    from RestrictedPython.Eval import default_guarded_getitem
-    from RestrictedPython.Eval import default_guarded_getiter
-    from RestrictedPython.Guards import guarded_iter_unpack_sequence
-    from RestrictedPython.Guards import guarded_unpack_sequence
-    from RestrictedPython.Guards import safer_getattr
+    from RestrictedPython.compile import compile_restricted as safe_compile  # isort:skip
+    from RestrictedPython.transformer import RestrictingNodeTransformer  # isort:skip
+    from RestrictedPython.Eval import default_guarded_getitem  # isort:skip
+    from RestrictedPython.Eval import default_guarded_getiter  # isort:skip
+    from RestrictedPython.Guards import guarded_iter_unpack_sequence  # isort:skip
+    from RestrictedPython.Guards import guarded_unpack_sequence  # isort:skip
+    from RestrictedPython.Guards import safer_getattr  # isort:skip
+    from RestrictedPython.Guards import safe_builtins  # isort:skip
+    from RestrictedPython.Limits import limited_builtins  # isort:skip
+    from RestrictedPython.Utilities import utility_builtins  # isort:skip
 else:
     warn(ImportWarning('RestrictedPython is not support on non-CPython implementations, and will not be imported.'))  # pragma: no cover
 
