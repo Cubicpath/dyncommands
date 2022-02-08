@@ -117,20 +117,16 @@ class TestCommandParser(unittest.TestCase):
         self.parser.prefix = self.original_prefix
 
     def test_add_command(self) -> None:
+        """Adding commands, both normal and those with errors"""
         broken_command_link = 'https://gist.github.com/Cubicpath/8fc611ca67bf2d17e03b4766a816596a'
-        with (self.parser.path / 'zzz__commands.py').open(mode='r', encoding='utf8') as file:
-            command0 = file.read()
-        with (self.parser.path / 'zzz__test.py').open(mode='r', encoding='utf8') as file:
-            command1 = file.read()
-        with (self.parser.path / 'test-no-command.txt').open(mode='r', encoding='utf8') as file:
-            command2 = file.read()
-        with (self.parser.path / 'test-docstring.txt').open(mode='r', encoding='utf8') as file:
-            command3 = file.read()
-        with (self.parser.path / 'test-metadata-error.txt').open(mode='r', encoding='utf8') as file:
-            command4 = file.read()
+        command0 = (self.parser.path / 'zzz__commands.py').read_text(encoding='utf8')
+        command1 = (self.parser.path / 'zzz__test.py').read_text(encoding='utf8')
+        command2 = (self.parser.path / 'test-no-command.txt').read_text(encoding='utf8')
+        command3 = (self.parser.path / 'test-docstring.txt').read_text(encoding='utf8')
+        command4 = (self.parser.path / 'test-metadata-error.txt').read_text(encoding='utf8')
+        self.assertEqual(self.parser.add_command(text=broken_command_link, link=True), 'broken')
         self.assertEqual(self.parser.add_command(text=command0), '')
         self.assertEqual(self.parser.add_command(text=command1), 'test')
-        self.assertEqual(self.parser.add_command(text=broken_command_link, link=True), 'broken')
         self.assertEqual(self.parser.add_command(text=command2), '')
         self.assertEqual(self.parser.add_command(text=command3), 'test-docstring')
         self.assertEqual(self.parser.add_command(text=command4), 'test-metadata-error')
@@ -155,6 +151,7 @@ class TestCommandParser(unittest.TestCase):
         self.assertEqual(self.feedback, f"'{context.working_string.strip()}' is correct usage of the 'test' command.")
 
     def test_remove_command(self) -> None:
+        """Removing commands"""
         # Test overridable as false
         self.assertEqual(self.parser.remove_command('commands'), '')
         self.assertIn('commands', self.parser.commands)
@@ -168,6 +165,7 @@ class TestCommandParser(unittest.TestCase):
         self.assertNotIn('test-no-function', self.parser.commands)
 
     def test_set_disabled(self) -> None:
+        """Disabling commands"""
         self.assertFalse(self.parser.set_disabled('commands', True))
         self.assertTrue(self.parser.set_disabled('test', True))
         self.assertFalse(self.parser.commands['commands'].disabled)
@@ -175,7 +173,9 @@ class TestCommandParser(unittest.TestCase):
         self.parser.set_disabled('test', False)
 
     def test_silent(self) -> None:
+        """CommandParser.print silent mode"""
         # Buffer shouldn't change
+        self.parser._silent = True
         self.assertTrue(self.parser._silent)
         old_output = self.buffer.getvalue()
         self.parser.print('test')

@@ -46,6 +46,7 @@ class TestSchemaHolder(unittest.TestCase):
         self._Test.validate(self.test_holder)
 
     def test_NotImplemented(self) -> None:
+        """All required attributes must be implemented"""
         with self.assertRaises(NotImplementedError):
             class _test0_(SchemaHolder):
                 ...
@@ -57,12 +58,14 @@ class TestSchemaHolder(unittest.TestCase):
             _test1_.empty()
 
     def test_dir(self) -> None:
+        """SchemaHolder.__dir__"""
         expected = sorted(set(dir(type(self.test_holder)) + list(self.test_holder._SCHEMA.get('properties', {}).keys())))
         result = dir(self.test_holder)
 
         self.assertEqual(expected, result)
 
     def test_getattribute(self) -> None:
+        """Getting attribute values"""
         with self.assertRaises(KeyError):
             _ = self.test_holder.non_existent
 
@@ -71,6 +74,7 @@ class TestSchemaHolder(unittest.TestCase):
         self.assertIsNone(self.test_holder.get('pop'))
 
     def test_setattr(self) -> None:
+        """Setting attribute values"""
         with self.assertRaises(KeyError):
             self.test_holder.non_existent = 1
 
@@ -84,6 +88,7 @@ class TestSchemaHolder(unittest.TestCase):
         self.assertIsNone(self.test_holder.get('_SCHEMA'))
 
     def test_delattr(self) -> None:
+        """Deleting attributes"""
         with self.assertRaises(KeyError):
             del self.test_holder.non_existent
 
@@ -100,6 +105,7 @@ class TestSchemaHolder(unittest.TestCase):
 
     # noinspection PyTypeChecker
     def test_item_lookups(self) -> None:
+        """Non-existent keys not working with SchemaHolder.__getitem__"""
         with self.assertRaises(TypeError):
             _ = self.test_holder[None]
 
@@ -110,6 +116,7 @@ class TestSchemaHolder(unittest.TestCase):
             del self.test_holder[None]
 
     def test_get(self) -> None:
+        """SchemaHolder.get method working with the SCHEMA_DEFAULT constant"""
         self.assertEqual('', self.test_holder.get('normal'))
         self.assertEqual('', self.test_holder.get('normal', SCHEMA_DEFAULT))
         del self.test_holder['normal']
@@ -127,11 +134,13 @@ class TestCommandData(unittest.TestCase):
         self.test_command = CommandData.empty()
 
     def test_commands_json(self) -> None:
+        """All command objects in commands.json file are valid CommandData"""
         with (Path(__file__).parent / 'data/commands/commands.json').open(mode='r', encoding='utf8') as file:
             for command in json.loads(file.read())['commands']:
                 CommandData.validate(command)
 
     def test_defaults(self) -> None:
+        """Default values of CommandData"""
         self.assertRaises(KeyError, CommandData)
         self.assertRaises(KeyError, CommandData, {})
         self.assertEqual(self.test_command.name, '')
@@ -144,6 +153,7 @@ class TestCommandData(unittest.TestCase):
         self.assertFalse(self.test_command.disabled)
 
     def test_validate(self) -> None:
+        """CommandData.validate blocking invalid json data"""
         CommandData.validate(self.test_command)
         self.assertRaises(ValidationError, CommandData.validate, {})
         self.assertRaises(ValidationError, CommandData.validate, {'name': 0})
@@ -160,16 +170,19 @@ class TestParserData(unittest.TestCase):
         self.test_data = ParserData.empty()
 
     def test_commands_json(self) -> None:
+        """commands.json file in test data is valid ParserData"""
         with (Path(__file__).parent / 'data/commands/commands.json').open(mode='r', encoding='utf8') as file:
             ParserData.validate(json.loads(file.read()))
 
     def test_defaults(self) -> None:
+        """Default values of ParserData"""
         self.assertRaises(KeyError, ParserData)
         self.assertRaises(KeyError, ParserData, {})
         self.assertEqual(self.test_data.commandPrefix, '')
         self.assertListEqual(self.test_data.commands, [])
 
     def test_validate(self) -> None:
+        """ParserData.validate blocking invalid json data"""
         ParserData.validate(self.test_data)
         self.assertRaises(ValidationError, ParserData.validate, {})
         self.assertRaises(ValidationError, ParserData.validate, {'commands': []})

@@ -91,12 +91,13 @@ class TestCommandSource(unittest.TestCase):
         self.feedback = ''
 
     def test_init(self) -> None:
-        """Test attribute initialization"""
+        """Default values of CommandSource"""
         self.assertEqual(self.source.display_name, '')
         self.assertEqual(self.source.permission, 0)
         self.assertIsNot(self.source._feedback_callback, DUMMY_FUNC)
 
     def test_callback(self) -> None:
+        """Test callback feature of CommandSource"""
         self.assertEqual(self.feedback, '')
         self.source.send_feedback('Test')
         self.assertEqual(self.feedback, 'Test')
@@ -107,13 +108,13 @@ class TestCommandSource(unittest.TestCase):
 
 class TestCommandContext(unittest.TestCase):
     def test_init(self) -> None:
-        """Test attribute initialization"""
+        """Default values of CommandContext"""
         context = CommandContext('working string')
         self.assertEqual(context.working_string, 'working string')
         self.assertEqual(str(context.source), str(CommandSource()))
 
     def test_properties(self) -> None:
-        """Test attribute initialization"""
+        """Test properties"""
         # No property setters
         self.assertRaises(TypeError, CommandContext.source.fset)
         self.assertRaises(TypeError, CommandContext.working_string.fset)
