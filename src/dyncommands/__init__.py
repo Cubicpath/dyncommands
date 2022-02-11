@@ -44,3 +44,4 @@ __all__ = (
 )
 
 __author__ = 'Cubicpath@Github <cubicpath@pm.me>'
+"""Author's information."""

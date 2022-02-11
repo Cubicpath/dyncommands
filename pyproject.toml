@@ -31,10 +31,13 @@ disable = [
     "no-member",                # E1101
 ]
 enable = [
+    "missing-module-docstring",     # C0114
     "missing-class-docstring",      # C0115
     "missing-function-docstring",   # C0116
+    "use-maxsplit-arg",             # C0207
     "line-too-long",                # C0301
     "consider-using-ternary",       # R1706
+    "use-dict-literal",             # R1735
 ]
 
 [tool.pylint.'REPORTS']
@@ -45,7 +48,7 @@ reports = "no"
 good-names = [
     "a", "b", "c",
     "e",
-    "i", "j", "k", "l",
+    "i", "id", "j", "k", "l",
     "o",
     "x", "y", "z",
     "_",

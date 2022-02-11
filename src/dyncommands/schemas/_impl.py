@@ -91,7 +91,7 @@ class SchemaHolder(ABC, dict):
         if key in dir(type(self)):
             if key in super().__getattribute__('keys')() and not self._warned:
                 warn(f'Key "{key}" of {self.__repr__()} is both a dictionary key and an object attribute. '
-                     f'Make sure to call {type(self)}.get(key) to reliably get the key value.')
+                     f'Make sure to call {type(self).__name__}.get(key) to reliably get the key value.')
                 SchemaHolder._warned = True
             return super().__getattribute__(key)
 
